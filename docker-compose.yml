@@ -31,8 +31,7 @@ services:
     volumes:
       - ./files:/input:ro
       - ./output_files:/output
-      # Optional: custom configuration file
-      # - ./parsedmarc/parsedmarc.ini:/etc/parsedmarc.ini:ro
+      - ./parsedmarc:/config:ro
 
   grafana:
     build: ./grafana/
