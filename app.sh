@@ -94,7 +94,78 @@ usage() {
     echo ""
 }
 
+check_port_conflict() {
+    local port="$1"
+    local our_grafana_id
+    our_grafana_id=$(dc ps -q grafana 2>/dev/null || true)
+
+    # 1. Check if another Docker container is publishing this port
+    local docker_matches
+    docker_matches=$(docker ps --no-trunc --filter "publish=${port}" --format '{{.ID}} {{.Names}} ({{.Image}})' 2>/dev/null || true)
+
+    local our_grafana_using_port=false
+    local conflicting_docker=""
+
+    if [ -n "$docker_matches" ]; then
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            local cid
+            cid=$(echo "$line" | awk '{print $1}')
+            if [ -n "$our_grafana_id" ] && [ "$cid" == "$our_grafana_id" ]; then
+                our_grafana_using_port=true
+            else
+                conflicting_docker="${conflicting_docker}${line}"$'\n'
+            fi
+        done <<< "$docker_matches"
+    fi
+
+    local conflict_found=false
+    local conflict_detail=""
+
+    if [ -n "$conflicting_docker" ]; then
+        conflict_found=true
+        conflict_detail=$(echo "$conflicting_docker" | sed '/^$/d' | awk '{names[NR]=$2 " " $3} END {for(i=1;i<=NR;i++) printf "%s%s", names[i], (i<NR?", ":"")}')
+    elif [ "$our_grafana_using_port" = false ]; then
+        # Our Grafana is not using this port, check if a host process or another service is listening
+        local host_proc=""
+        if command -v lsof >/dev/null 2>&1; then
+            host_proc=$(lsof -iTCP:"${port}" -sTCP:LISTEN -P -n 2>/dev/null | awk 'NR>1 {print $1, "(PID: " $2 ")"}' | head -n 1 || true)
+        elif command -v ss >/dev/null 2>&1; then
+            host_proc=$(ss -tulpn "sport = :${port}" 2>/dev/null | awk 'NR>1 {print $0}' | head -n 1 || true)
+        elif command -v nc >/dev/null 2>&1; then
+            if nc -z 127.0.0.1 "${port}" 2>/dev/null; then
+                host_proc="Active service on port ${port}"
+            fi
+        fi
+
+        if [ -n "$host_proc" ]; then
+            conflict_found=true
+            conflict_detail="$host_proc"
+        fi
+    fi
+
+    if [ "$conflict_found" = true ]; then
+        echo -e "${RED}========================================================================${NC}"
+        echo -e "${RED}[✗] ポート競合エラー: ポート ${port} は既に使用されています${NC}"
+        echo -e "${RED}    Port Conflict: Port ${port} is already in use!${NC}"
+        echo -e "${RED}========================================================================${NC}"
+        echo -e "${YELLOW}Grafanaに割り当てようとしたポート ${port} は、以下のプロセス/コンテナで使用中です:${NC}"
+        echo -e "  👉 ${CYAN}${conflict_detail}${NC}\n"
+        echo -e "${YELLOW}原因 (Cause):${NC}"
+        echo -e "  旧バージョンのDMARC Visualizer、別のGrafana、またはホスト上の他のWebアプリが"
+        echo -e "  既にポート ${port} をリッスンしています。\n"
+        echo -e "${YELLOW}解決方法 (Resolution):${NC}"
+        echo -e "  1. 競合しているコンテナまたはプロセスを停止する"
+        echo -e "     (Stop the conflicting container or process)"
+        echo -e "  2. または、${GREEN}.env${NC} 内でGrafanaのポートを空いている番号に変更する:"
+        echo -e "     ${GREEN}GRAFANA_PORT=3001${NC}  (または他の空きポート)\n"
+        echo -e "${RED}[!] Docker Composeの起動を中断しました。ポートを確認の上、再度実行してください。${NC}"
+        exit 1
+    fi
+}
+
 cmd_start() {
+    check_port_conflict "$GRAFANA_PORT"
     echo -e "${BLUE}[*] Starting DMARC Visualizer services...${NC}"
     mkdir -p files output_files
     dc up -d
@@ -109,6 +180,7 @@ cmd_stop() {
 }
 
 cmd_restart() {
+    check_port_conflict "$GRAFANA_PORT"
     echo -e "${BLUE}[*] Restarting DMARC Visualizer services...${NC}"
     dc restart
     echo -e "${GREEN}[✔] Services restarted!${NC}"
