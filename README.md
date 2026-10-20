@@ -104,19 +104,18 @@ save_aggregate = True
 save_forensic = True
 output = /output/
 
-# Optional: Fetch DMARC reports automatically from an IMAP / Exchange mailbox
-[mailbox]
+# Optional: Fetch DMARC reports automatically from an IMAP mailbox
+[imap]
+host = imap.example.com
+port = 993
+ssl = True
+user = dmarc@example.com
+password = your-imap-password
+watch = True
+delete = False
 # batch_size: Number of messages to fetch & process per batch before writing to DB (default: 10).
 # Keeping this small (e.g. 5-20) prevents RAM spikes when thousands of unread reports exist.
 batch_size = 10
-reports_folder = INBOX
-archive_folder = Archive
-host = imap.example.com
-user = dmarc@example.com
-password = your-imap-password
-ssl = True
-watch = True
-delete = False
 ```
 
 > [!TIP]
@@ -315,23 +314,22 @@ save_aggregate = True
 save_forensic = True
 output = /output/
 
-# 任意: メールボックス（IMAP / Exchange）からレポートを自動取得
-[mailbox]
+# 任意: IMAP メールボックスからレポートを自動取得
+[imap]
+host = imap.example.com
+port = 993
+ssl = True
+user = dmarc@example.com
+password = your-imap-password
+watch = True
+delete = False
 # batch_size: 1回に取得・パースしてDBに保存するメール件数（デフォルト: 10）
 # 未読メールが数千通溜まっている場合でも、小さく設定（5〜20）することでメモリの急上昇（スパイク）を防ぎます。
 batch_size = 10
-reports_folder = INBOX
-archive_folder = Archive
-host = imap.example.com
-user = dmarc@example.com
-password = your-imap-password
-ssl = True
-watch = True
-delete = False
 ```
 
 > [!TIP]
-> **ピークメモリの抑制 (`batch_size`)**: メールボックス内に大量のレポートメールが溜まっている場合でも、`batch_size = 10` を設定することで「小分けに取得 → パース → PostgreSQLに保存 → メモリ解放」のサイクルを繰り返すため、大量処理時でもピークメモリを常に数十MB〜100MB程度に抑えられます。（※従来の `[imap]` セクション記述も後方互換性のためサポートされています）。
+> **ピークメモリの抑制 (`batch_size`)**: メールボックス内に大量のレポートメールが溜まっている場合でも、`batch_size = 10` を設定することで「小分けに取得 → パース → PostgreSQLに保存 → メモリ解放」のサイクルを繰り返すため、大量処理時でもピークメモリを常に数十MB〜100MB程度に抑えられます。旧バージョンの `[imap]` 形式の設定ファイルもそのまま使えます。
 
 ---
 
