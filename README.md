@@ -18,6 +18,24 @@ Analyse and visualize DMARC results using lightweight, modern open-source tools.
 
 ---
 
+## Resource & Memory Comparison (30 Days Retention)
+
+Below is an estimated real-world comparison of running `dmarc-visualizer` retaining **30 days** of DMARC report data:
+
+| Component | **Legacy Stack (Elasticsearch 7.x)** | **This Fork (PostgreSQL 16)** | Difference |
+| :--- | :--- | :--- | :--- |
+| **Database Engine** | **~1.5 GB – 2.5 GB+** | **~35 MB – 60 MB** | **~97% reduction** |
+| **Grafana (Web Dashboard)** | ~100 MB – 150 MB | ~75 MB – 90 MB | Legacy plugins removed |
+| **Total Resident Memory (RAM)** | **~1.6 GB – 2.7 GB+** | **~110 MB – 150 MB** | **~95% overall reduction** |
+| **Minimum Hardware Required** | 2 GB – 4 GB RAM VPS | **512 MB – 1 GB RAM VPS / Raspberry Pi** | Runs on cheapest instances |
+
+### Why is PostgreSQL so much lighter?
+1. **Zero Java/JVM Overhead:** Elasticsearch allocates a fixed Java Heap of at least 1 GB upon launch, plus operating system page caches. PostgreSQL (written in C) allocates memory dynamically as needed and starts at only ~25 MB.
+2. **No Daily Index/Shard Accumulation:** `parsedmarc` creates separate daily indices (`dmarc_aggregate-YYYY-MM-DD`). In Elasticsearch, 30 days means 30+ open shards with Lucene terms dictionaries pinned in memory. In PostgreSQL, all data lives in standard tables indexed by clean B-Trees, adding negligible memory overhead for 30 days of data.
+3. **Safe from OOM Crashes:** Older setups frequently suffered from Out-Of-Memory (OOM) kills on modest servers. The PostgreSQL stack comfortably runs alongside your other services without resource competition.
+
+---
+
 ## Quick Start
 
 ### 1. Start Services
