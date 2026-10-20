@@ -116,6 +116,8 @@ user = dmarc@example.com
 password = your-imap-password
 watch = True
 delete = False
+# reports_folder = INBOX      # Folder to read reports from (default: INBOX)
+# archive_folder = Archive    # Folder to move processed reports to (default: Archive)
 # batch_size: Number of messages to fetch & process per batch before writing to DB (default: 10).
 # Keeping this small (e.g. 5-20) prevents RAM spikes when thousands of unread reports exist.
 batch_size = 10
@@ -329,6 +331,8 @@ user = dmarc@example.com
 password = your-imap-password
 watch = True
 delete = False
+# reports_folder = INBOX      # レポート読み込み元フォルダ（デフォルト: INBOX）
+# archive_folder = Archive    # 処理済みメール移動先フォルダ（デフォルト: Archive）
 # batch_size: 1回に取得・パースしてDBに保存するメール件数（デフォルト: 10）
 # 未読メールが数千通溜まっている場合でも、小さく設定（5〜20）することでメモリの急上昇（スパイク）を防ぎます。
 batch_size = 10
