@@ -174,7 +174,7 @@ cmd_start() {
     check_port_conflict "$GRAFANA_PORT"
     echo -e "${BLUE}[*] Starting DMARC Visualizer services...${NC}"
     mkdir -p files output_files
-    dc up -d
+    dc up -d --build
     echo -e "${GREEN}[✔] Services started successfully!${NC}"
     print_network_info
 }
