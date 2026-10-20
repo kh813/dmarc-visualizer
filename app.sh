@@ -30,8 +30,21 @@ fi
 
 POSTGRES_DB="${POSTGRES_DB:-dmarc}"
 POSTGRES_USER="${POSTGRES_USER:-parsedmarc}"
+GRAFANA_BIND_IP="${GRAFANA_BIND_IP:-127.0.0.1}"
 GRAFANA_PORT="${GRAFANA_PORT:-3001}"
+POSTGRES_BIND_IP="${POSTGRES_BIND_IP:-127.0.0.1}"
 POSTGRES_PORT="${POSTGRES_PORT:-5433}"
+GRAFANA_ROOT_URL="${GRAFANA_ROOT_URL:-http://localhost:${GRAFANA_PORT}}"
+
+# Build Docker Compose arguments
+COMPOSE_ARGS=("-f" "docker-compose.yml")
+if [ -n "$CLOUDFLARE_TUNNEL_NETWORK" ]; then
+    COMPOSE_ARGS+=("-f" "docker-compose.tunnel.yml")
+fi
+
+dc() {
+    docker compose "${COMPOSE_ARGS[@]}" "$@"
+}
 
 # ------------------------------------------------------------------------------
 # Helper Functions
@@ -41,6 +54,26 @@ print_header() {
     echo -e "${CYAN}======================================================${NC}"
     echo -e "${CYAN}         DMARC Visualizer Management Script           ${NC}"
     echo -e "${CYAN}======================================================${NC}"
+}
+
+print_network_info() {
+    if [ "$GRAFANA_BIND_IP" == "127.0.0.1" ]; then
+        echo -e "${CYAN}👉 Access Mode:        ${GREEN}Local-only (127.0.0.1) — External & LAN access blocked${NC}"
+    elif [ "$GRAFANA_BIND_IP" == "0.0.0.0" ]; then
+        echo -e "${CYAN}👉 Access Mode:        ${YELLOW}Open to all interfaces (0.0.0.0) — Accessible via LAN / Host IP${NC}"
+    else
+        echo -e "${CYAN}👉 Access Mode:        ${GREEN}Bound to IP ${GRAFANA_BIND_IP}${NC}"
+    fi
+
+    echo -e "${CYAN}👉 Local Web URL:      ${GREEN}http://${GRAFANA_BIND_IP}:${GRAFANA_PORT}${NC}"
+
+    if [ -n "$CLOUDFLARE_TUNNEL_NETWORK" ]; then
+        echo -e "${CYAN}👉 Cloudflare Tunnel:  ${GREEN}Connected to Docker network '${CLOUDFLARE_TUNNEL_NETWORK}'${NC}"
+        echo -e "${CYAN}   - Internal URL:     ${GREEN}http://grafana:3000${NC}"
+        if [ "$GRAFANA_ROOT_URL" != "http://localhost:${GRAFANA_PORT}" ]; then
+            echo -e "${CYAN}   - Public URL:       ${GREEN}${GRAFANA_ROOT_URL}${NC}"
+        fi
+    fi
 }
 
 usage() {
@@ -64,45 +97,44 @@ usage() {
 cmd_start() {
     echo -e "${BLUE}[*] Starting DMARC Visualizer services...${NC}"
     mkdir -p files output_files
-    docker compose up -d
+    dc up -d
     echo -e "${GREEN}[✔] Services started successfully!${NC}"
-    echo -e "${CYAN}👉 Grafana Dashboard: ${GREEN}http://localhost:${GRAFANA_PORT}${NC}"
-    echo -e "${CYAN}👉 PostgreSQL Port:   ${GREEN}${POSTGRES_PORT}${NC}"
+    print_network_info
 }
 
 cmd_stop() {
     echo -e "${BLUE}[*] Stopping DMARC Visualizer services...${NC}"
-    docker compose down
+    dc down
     echo -e "${GREEN}[✔] Services stopped.${NC}"
 }
 
 cmd_restart() {
     echo -e "${BLUE}[*] Restarting DMARC Visualizer services...${NC}"
-    docker compose restart
+    dc restart
     echo -e "${GREEN}[✔] Services restarted!${NC}"
-    echo -e "${CYAN}👉 Grafana Dashboard: ${GREEN}http://localhost:${GRAFANA_PORT}${NC}"
+    print_network_info
 }
 
 cmd_status() {
     print_header
     echo -e "${BLUE}[*] Container Status:${NC}"
-    docker compose ps
+    dc ps
     echo ""
     echo -e "${BLUE}[*] Memory & CPU Resource Usage:${NC}"
     docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" \
-        $(docker compose ps -q) 2>/dev/null || echo "No running containers found."
+        $(dc ps -q) 2>/dev/null || echo "No running containers found."
     echo ""
-    echo -e "${CYAN}👉 Grafana Dashboard: ${GREEN}http://localhost:${GRAFANA_PORT}${NC}"
+    print_network_info
 }
 
 cmd_logs() {
     local service="$1"
     if [ -n "$service" ]; then
         echo -e "${BLUE}[*] Streaming logs for ${service}...${NC}"
-        docker compose logs -f "$service"
+        dc logs -f "$service"
     else
         echo -e "${BLUE}[*] Streaming logs for all services...${NC}"
-        docker compose logs -f
+        dc logs -f
     fi
 }
 
@@ -114,8 +146,8 @@ cmd_parse() {
         echo -e "${YELLOW}[!] Warning: No report files found in ./files/.${NC}"
         echo -e "${YELLOW}    Please place .xml, .zip, or .gz files in ./files/ first.${NC}"
     fi
-    docker compose run --rm parsedmarc
-    echo -e "${GREEN}[✔] Parsing complete! Check updated reports at: http://localhost:${GRAFANA_PORT}${NC}"
+    dc run --rm parsedmarc
+    echo -e "${GREEN}[✔] Parsing complete! Check updated reports at: http://${GRAFANA_BIND_IP}:${GRAFANA_PORT}${NC}"
 }
 
 cmd_prune() {
@@ -133,7 +165,7 @@ cmd_prune() {
     fi
 
     # Execute deletion in PostgreSQL using CASCADE
-    docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<EOF
+    dc exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<EOF
 BEGIN;
 DELETE FROM dmarc_aggregate_report WHERE end_date < NOW() - INTERVAL '${days} days';
 DELETE FROM dmarc_failure_report WHERE arrival_date_utc < NOW() - INTERVAL '${days} days';
@@ -159,7 +191,7 @@ cmd_clean_all() {
     read -rp "Are you ABSOLUTELY sure? Type 'yes' to proceed: " confirm
     if [ "$confirm" == "yes" ]; then
         echo -e "${BLUE}[*] Removing all containers and volumes...${NC}"
-        docker compose down -v
+        dc down -v
         echo -e "${GREEN}[✔] Database and containers have been completely purged.${NC}"
     else
         echo -e "${BLUE}[*] Cancelled.${NC}"
@@ -168,7 +200,7 @@ cmd_clean_all() {
 
 cmd_psql() {
     echo -e "${BLUE}[*] Connecting to PostgreSQL CLI (type '\\q' to exit)...${NC}"
-    docker compose exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+    dc exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 }
 
 # ------------------------------------------------------------------------------

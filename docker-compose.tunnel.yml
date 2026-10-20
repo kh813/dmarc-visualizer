@@ -1,0 +1,15 @@
+# ==============================================================================
+# Cloudflare Tunnel Network Integration (Optional)
+# This file is automatically loaded by app.sh when CLOUDFLARE_TUNNEL_NETWORK is set in .env.
+# ==============================================================================
+
+services:
+  grafana:
+    networks:
+      - default
+      - cloudflare_tunnel
+
+networks:
+  cloudflare_tunnel:
+    name: ${CLOUDFLARE_TUNNEL_NETWORK:-cloudflared_net}
+    external: true

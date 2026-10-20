@@ -47,9 +47,18 @@ Configuration is managed via `.env`. A template is provided in `.env.example`:
 
 ```bash
 # Grafana Web UI Port (Default: 3001 to prevent conflicts with legacy 3000)
+# ------------------------------------------------------------------------------
+# Access Control & Port Settings
+# ------------------------------------------------------------------------------
+# IP Address to bind Grafana Web UI
+# - "127.0.0.1" (Default): Accessible ONLY from this local machine (loopback).
+#                          Completely blocks external LAN, WAN, and direct container access.
+# - "192.168.x.x"        : Accessible only from your specific local LAN IP.
+# - "0.0.0.0"            : Accessible from all network interfaces (LAN + Host IP).
+GRAFANA_BIND_IP=127.0.0.1
 GRAFANA_PORT=3001
 
-# PostgreSQL Host Port (Default: 5433 to prevent conflicts with legacy 5432)
+POSTGRES_BIND_IP=127.0.0.1
 POSTGRES_PORT=5433
 
 # PostgreSQL Database Credentials
@@ -60,7 +69,66 @@ POSTGRES_PASSWORD=parsedmarc_password
 # Grafana Admin Credentials
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
+
+# ------------------------------------------------------------------------------
+# Cloudflare Tunnel Integration (Optional)
+# ------------------------------------------------------------------------------
+# Public URL when accessed via Cloudflare Tunnel or reverse proxy (e.g. https://dmarc.example.com)
+# GRAFANA_ROOT_URL=https://dmarc.example.com
+
+# If your cloudflared container runs in Docker, specify its external Docker network name:
+# CLOUDFLARE_TUNNEL_NETWORK=cloudflared_net
 ```
+
+---
+
+## Network & Access Control (Local-only vs Cloudflare Tunnel)
+
+You can easily configure whether this visualizer is strictly isolated to your local machine, or securely accessible via Cloudflare Tunnel.
+
+### Option A: Strict Local-Only Access (Default)
+In `.env`:
+```bash
+GRAFANA_BIND_IP=127.0.0.1
+```
+- **How it works:** Grafana and PostgreSQL bind strictly to the loopback interface (`127.0.0.1`).
+- **Security:** External devices on your local network (LAN) and other isolated Docker containers (including `cloudflared`) **cannot** access the web UI directly via the host's LAN IP.
+- Only users sitting at the host machine or using SSH port forwarding can access `http://127.0.0.1:3001`.
+
+### Option B: Access via Cloudflare Tunnel (Recommended Method: Docker Shared Network)
+If `cloudflared` is running as a Docker container, you can route directly through Docker's internal network **without opening any host ports to the LAN or internet**.
+
+1. In `.env`, set your Cloudflare Tunnel Docker network and your public domain:
+   ```bash
+   CLOUDFLARE_TUNNEL_NETWORK=my_tunnel_network
+   GRAFANA_ROOT_URL=https://dmarc.example.com
+   ```
+2. Restart services:
+   ```bash
+   ./app.sh restart
+   ```
+   `app.sh` automatically attaches Grafana to your tunnel network.
+3. In your Cloudflare Zero Trust Dashboard (or `config.yml`), add an ingress rule routing to the internal container address:
+   ```yaml
+   ingress:
+     - hostname: dmarc.example.com
+       service: http://grafana:3000
+   ```
+   *Notice you connect to port `3000` via internal Docker DNS `grafana`, while `GRAFANA_BIND_IP=127.0.0.1` stays secure on the host!*
+
+### Option C: Access via Cloudflare Tunnel (Host Networking Method)
+If your `cloudflared` container connects to host ports or runs on bare metal:
+1. In `.env`:
+   ```bash
+   GRAFANA_BIND_IP=0.0.0.0
+   GRAFANA_ROOT_URL=https://dmarc.example.com
+   ```
+2. In Cloudflare Tunnel ingress rules:
+   ```yaml
+   ingress:
+     - hostname: dmarc.example.com
+       service: http://host.docker.internal:3001
+   ```
 
 ### Custom `parsedmarc.ini` (Optional)
 If you do not provide a `parsedmarc.ini`, one will be automatically generated from your `.env` settings.
