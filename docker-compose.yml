@@ -1,27 +1,58 @@
-version: '3.5'
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dmarc}
+      POSTGRES_USER: ${POSTGRES_USER:-parsedmarc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parsedmarc_password}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-parsedmarc} -d ${POSTGRES_DB:-dmarc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   parsedmarc:
     build: ./parsedmarc/
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-dmarc}
+      POSTGRES_USER: ${POSTGRES_USER:-parsedmarc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parsedmarc_password}
     volumes:
       - ./files:/input:ro
       - ./output_files:/output
-    command: parsedmarc -c /parsedmarc.ini /input/* --debug
-    depends_on:
-      - elasticsearch
-    restart: on-failure
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
-    environment:
-      - discovery.type=single-node
-    volumes:
-      - ./elastic_data:/usr/share/elasticsearch/data
+      # Optional: custom configuration file
+      # - ./parsedmarc/parsedmarc.ini:/etc/parsedmarc.ini:ro
 
   grafana:
     build: ./grafana/
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
-      - 3000:3000
-    user: root
+      - "${GRAFANA_PORT:-3001}:3000"
     environment:
-      GF_INSTALL_PLUGINS: grafana-piechart-panel,grafana-worldmap-panel
-      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-dmarc}
+      POSTGRES_USER: ${POSTGRES_USER:-parsedmarc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parsedmarc_password}
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+volumes:
+  postgres_data:
+  grafana_data:

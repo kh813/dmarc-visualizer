@@ -1,6 +1,8 @@
-FROM grafana/grafana:8.5.4
+FROM grafana/grafana:11.5.2
 
-ADD --chown=grafana:root https://raw.githubusercontent.com/domainaware/parsedmarc/master/grafana/Grafana-DMARC_Reports.json /var/lib/grafana/dashboards/
-RUN chmod 644 /etc/grafana/provisioning
+USER root
+RUN mkdir -p /var/lib/grafana/dashboards && chown -R grafana:root /var/lib/grafana/dashboards
+USER grafana
 
-COPY grafana-provisioning/ /etc/grafana/provisioning/
+COPY --chown=grafana:root grafana-provisioning/ /etc/grafana/provisioning/
+COPY --chown=grafana:root dashboards/ /var/lib/grafana/dashboards/

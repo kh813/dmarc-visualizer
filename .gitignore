@@ -2,4 +2,6 @@
 /output_files/
 /parsedmarc/GeoLite2-Country*
 /elastic_data/
+/postgres_data/
 parsedmarc.ini
+.env
