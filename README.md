@@ -100,7 +100,10 @@ If you need advanced features like **automated IMAP/Exchange mailbox polling**, 
 
 ```ini
 [general]
+# Save daily statistical aggregate reports (rua) to database
 save_aggregate = True
+# Save individual failure/forensic reports (ruf) for phishing & incident investigation
+# (Note: Malicious attachment payloads are automatically stripped for security)
 save_forensic = True
 output = /output/
 
@@ -310,7 +313,10 @@ GRAFANA_ADMIN_PASSWORD=admin
 
 ```ini
 [general]
+# 日次集計統計レポート (rua) をデータベースに保存
 save_aggregate = True
+# 個別の認証失敗・なりすまし調査用レポート (ruf) をデータベースに保存
+# （危険な添付ファイルバイナリは自動的に無害化・除去されます）
 save_forensic = True
 output = /output/
 
