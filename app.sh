@@ -30,7 +30,7 @@ fi
 
 POSTGRES_DB="${POSTGRES_DB:-dmarc}"
 POSTGRES_USER="${POSTGRES_USER:-parsedmarc}"
-GRAFANA_BIND_IP="${GRAFANA_BIND_IP:-127.0.0.1}"
+GRAFANA_BIND_IP="${GRAFANA_BIND_IP:-0.0.0.0}"
 GRAFANA_PORT="${GRAFANA_PORT:-3001}"
 POSTGRES_BIND_IP="${POSTGRES_BIND_IP:-127.0.0.1}"
 POSTGRES_PORT="${POSTGRES_PORT:-5433}"
@@ -57,21 +57,25 @@ print_header() {
 }
 
 print_network_info() {
-    if [ "$GRAFANA_BIND_IP" == "127.0.0.1" ]; then
-        echo -e "${CYAN}👉 Access Mode:        ${GREEN}Local-only (127.0.0.1) — External & LAN access blocked${NC}"
-    elif [ "$GRAFANA_BIND_IP" == "0.0.0.0" ]; then
-        echo -e "${CYAN}👉 Access Mode:        ${YELLOW}Open to all interfaces (0.0.0.0) — Accessible via LAN / Host IP${NC}"
+    if [ "$GRAFANA_BIND_IP" == "0.0.0.0" ]; then
+        echo -e "${CYAN}👉 Web Access (Grafana):   ${GREEN}Accessible from LAN & local host (http://<LAN-IP>:${GRAFANA_PORT} or http://localhost:${GRAFANA_PORT})${NC}"
+    elif [ "$GRAFANA_BIND_IP" == "127.0.0.1" ]; then
+        echo -e "${CYAN}👉 Web Access (Grafana):   ${YELLOW}Local host only (http://127.0.0.1:${GRAFANA_PORT}) — LAN blocked${NC}"
     else
-        echo -e "${CYAN}👉 Access Mode:        ${GREEN}Bound to IP ${GRAFANA_BIND_IP}${NC}"
+        echo -e "${CYAN}👉 Web Access (Grafana):   ${GREEN}Bound to http://${GRAFANA_BIND_IP}:${GRAFANA_PORT}${NC}"
     fi
 
-    echo -e "${CYAN}👉 Local Web URL:      ${GREEN}http://${GRAFANA_BIND_IP}:${GRAFANA_PORT}${NC}"
+    if [ "$POSTGRES_BIND_IP" == "127.0.0.1" ]; then
+        echo -e "${CYAN}👉 DB Access (PostgreSQL): ${GREEN}Secure (127.0.0.1:${POSTGRES_PORT}) — LAN access blocked${NC}"
+    else
+        echo -e "${CYAN}👉 DB Access (PostgreSQL): ${YELLOW}Bound to ${POSTGRES_BIND_IP}:${POSTGRES_PORT}${NC}"
+    fi
 
     if [ -n "$CLOUDFLARE_TUNNEL_NETWORK" ]; then
-        echo -e "${CYAN}👉 Cloudflare Tunnel:  ${GREEN}Connected to Docker network '${CLOUDFLARE_TUNNEL_NETWORK}'${NC}"
-        echo -e "${CYAN}   - Internal URL:     ${GREEN}http://grafana:3000${NC}"
+        echo -e "${CYAN}👉 Cloudflare Tunnel:       ${GREEN}Connected to Docker network '${CLOUDFLARE_TUNNEL_NETWORK}'${NC}"
+        echo -e "${CYAN}   - Internal URL:          ${GREEN}http://grafana:3000${NC}"
         if [ "$GRAFANA_ROOT_URL" != "http://localhost:${GRAFANA_PORT}" ]; then
-            echo -e "${CYAN}   - Public URL:       ${GREEN}${GRAFANA_ROOT_URL}${NC}"
+            echo -e "${CYAN}   - Public URL:            ${GREEN}${GRAFANA_ROOT_URL}${NC}"
         fi
     fi
 }

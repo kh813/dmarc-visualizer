@@ -72,12 +72,11 @@ Access Grafana in your web browser at:
 Configuration is managed via `.env`. A template is provided in `.env.example`:
 
 ```bash
-# Access Control & Port Settings
-# - "127.0.0.1" (Default): Accessible ONLY from this local machine.
-# - "0.0.0.0"            : Accessible from all network interfaces (LAN + Host IP).
-GRAFANA_BIND_IP=127.0.0.1
+# Web UI binding (Default: 0.0.0.0 - accessible from local host and LAN devices)
+GRAFANA_BIND_IP=0.0.0.0
 GRAFANA_PORT=3001
 
+# PostgreSQL binding (Default: 127.0.0.1 for maximum security - LAN access to DB is blocked)
 POSTGRES_BIND_IP=127.0.0.1
 POSTGRES_PORT=5433
 
@@ -117,16 +116,30 @@ delete = False
 
 ---
 
-### Network & Access Control (Local-only vs Cloudflare Tunnel)
+### Network & Access Control (LAN Access vs Local-Only vs Cloudflare Tunnel)
 
-#### Option A: Strict Local-Only Access (Default)
+By default, the stack is configured with security in mind:
+- **Web UI (Grafana)**: Binds to `0.0.0.0:3001` so it is accessible from your local host AND other devices on your LAN (e.g. `http://<LAN-IP>:3001`).
+- **Database (PostgreSQL)**: Binds strictly to `127.0.0.1:5433` so other LAN devices **cannot** access PostgreSQL directly. (Grafana connects internally via Docker's private bridge network).
+
+#### Option A: Standard Setup (Web on LAN, Database Local-Only)
+In `.env`:
+```bash
+GRAFANA_BIND_IP=0.0.0.0
+POSTGRES_BIND_IP=127.0.0.1
+```
+- Dashboard is reachable from other PCs or smartphones on your Wi-Fi/LAN.
+- PostgreSQL database is strictly isolated to the host machine.
+
+#### Option B: Strict Local-Only Web Access (Lockdown)
+If you want to forbid LAN devices from accessing even the web UI:
 In `.env`:
 ```bash
 GRAFANA_BIND_IP=127.0.0.1
 ```
-Grafana binds strictly to `127.0.0.1`. External devices on LAN and other isolated containers cannot access it.
+Grafana binds strictly to `127.0.0.1`. External devices on LAN cannot access it.
 
-#### Option B: Access via Cloudflare Tunnel (Recommended: Docker Shared Network)
+#### Option C: Access via Cloudflare Tunnel (Recommended: Docker Shared Network)
 Route directly through Docker's internal network **without opening any host ports to the LAN or internet**:
 1. In `.env`:
    ```bash
@@ -256,12 +269,11 @@ PostgreSQL（ポート `5433`）と Grafana（ポート `3001`）がローカル
 `.env` ファイルでポートや認証情報を設定します（テンプレート: `.env.example`）：
 
 ```bash
-# アクセス制御 & ポート設定
-# - "127.0.0.1" (デフォルト): このマシン自身からのみアクセス可能（LAN・外部遮断）
-# - "0.0.0.0"            : 全インターフェースで待ち受け（LAN内からアクセス可能）
-GRAFANA_BIND_IP=127.0.0.1
+# Web 画面のバインド (デフォルト: 0.0.0.0 で LAN 内の他端末からもアクセス可能)
+GRAFANA_BIND_IP=0.0.0.0
 GRAFANA_PORT=3001
 
+# PostgreSQL のバインド (デフォルト: 127.0.0.1 でホスト自身に限定、LAN からの DB アクセスは遮断)
 POSTGRES_BIND_IP=127.0.0.1
 POSTGRES_PORT=5433
 
@@ -301,16 +313,28 @@ delete = False
 
 ---
 
-### ネットワーク & アクセス制御（ローカル限定 vs Cloudflare Tunnel）
+### ネットワーク & アクセス制御（LAN アクセス vs 完全ローカル vs Cloudflare Tunnel）
 
-#### オプション A: 完全ローカル限定（デフォルト）
-`.env` で設定：
+セキュリティを考慮した標準構成となっています：
+- **Web 画面 (Grafana)**: `0.0.0.0:3001` でリッスンし、ホストマシン自身および LAN 内の別端末（スマホや別 PC: `http://<ホストのLAN-IP>:3001`）からアクセスできます。
+- **データベース (PostgreSQL)**: `127.0.0.1:5433` に厳格に限定され、LAN 内の他端末から DB ポートへの直接接続は遮断されます（Grafana との通信は Docker 内部の閉じたネットワークで行われるため安全です）。
+
+#### オプション A: 標準設定（Web は LAN 内公開、DB はローカル限定・推奨）
+`.env` の設定：
+```bash
+GRAFANA_BIND_IP=0.0.0.0
+POSTGRES_BIND_IP=127.0.0.1
+```
+- ブラウザ画面は LAN 内のどの端末からでも閲覧可能。
+- データベースはホストマシン自身からのみアクセス可能で安全。
+
+#### オプション B: Web 画面も完全ローカル限定にする場合（完全ロックダウン）
+LAN 内の他端末からの Web 画面アクセスも禁止したい場合：
 ```bash
 GRAFANA_BIND_IP=127.0.0.1
 ```
-ホストの `127.0.0.1` にのみバインドされます。同一 LAN 内の別マシンや、同一ホスト上の別コンテナ（`cloudflared` 含む）からも直接アクセスはできません。
 
-#### オプション B: Cloudflare Tunnel 経由でのアクセス（推奨: Docker 共有ネットワーク方式）
+#### オプション C: Cloudflare Tunnel 経由でのアクセス（推奨: Docker 共有ネットワーク方式）
 ホストマシンのポートを LAN やインターネットに開けることなく、Docker 内部ネットワーク経由で安全に公開できます：
 
 1. `.env` を設定：
