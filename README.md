@@ -18,7 +18,7 @@ Analyse and visualize DMARC results using lightweight, modern open-source tools.
 ### Features
 
 - **Ultra-lightweight & Low Memory**: Uses PostgreSQL (`postgres:16-alpine`), consuming less than 100 MB RAM in total (over 90% reduction compared to Elasticsearch). No Java/JVM required.
-- **Side-by-side Testing**: Ports and database credentials are fully configurable via `.env` (defaults to Grafana on port `3001` and PostgreSQL on port `5433` so you can test alongside existing services without port conflicts).
+- **Side-by-side Testing**: Ports and database credentials are fully configurable via `.env` (defaults to standard Grafana port `3000`. If testing side-by-side with an existing service on port 3000, simply change `GRAFANA_PORT=3000` in `.env`).
 - **Official Dashboard Included**: Pre-configured with the official Grafana 10/11 DMARC dashboard for PostgreSQL.
 - **Auto-adapts Legacy Configs**: You can directly copy your existing `parsedmarc.ini` — legacy `[elasticsearch]` sections are automatically disabled, and PostgreSQL connections are configured seamlessly.
 - **Convenient Management Script (`app.sh`)**: Start, stop, restart, check memory status, parse reports, and prune old data with single commands.
@@ -50,7 +50,7 @@ Below is an estimated real-world comparison of running `dmarc-visualizer` retain
 ```bash
 ./app.sh start
 ```
-By default, this will spin up PostgreSQL (port `5433`) and Grafana (port `3001`) bound to `127.0.0.1`.
+By default, this will spin up PostgreSQL (internalized) and Grafana on port `3000`.
 
 #### 2. Parse DMARC Reports
 Place your DMARC XML/zip/gz reports into the `files/` directory, then run:
@@ -61,7 +61,7 @@ Place your DMARC XML/zip/gz reports into the `files/` directory, then run:
 
 #### 3. Open Grafana Dashboard
 Access Grafana in your web browser at:
-👉 **http://127.0.0.1:3001** (or your configured `GRAFANA_PORT`)
+👉 **http://localhost:3000** (or http://<LAN-IP>:3000)
 - Navigate to **Dashboards > DMARC Reports — PostgreSQL**
 
 ---
@@ -74,7 +74,7 @@ Configuration is managed via `.env`. A template is provided in `.env.example`:
 ```bash
 # Web UI binding (Default: 0.0.0.0 - accessible from local host and LAN devices)
 GRAFANA_BIND_IP=0.0.0.0
-GRAFANA_PORT=3001
+GRAFANA_PORT=3000
 
 # PostgreSQL binding (Default: 127.0.0.1 for maximum security - LAN access to DB is blocked)
 POSTGRES_BIND_IP=127.0.0.1
@@ -119,7 +119,7 @@ delete = False
 ### Network & Access Control (LAN Access vs Local-Only vs Cloudflare Tunnel)
 
 By default, the stack is configured with security in mind:
-- **Web UI (Grafana)**: Binds to `0.0.0.0:3001` so it is accessible from your local host AND other devices on your LAN (e.g. `http://<LAN-IP>:3001`). Passwordless viewing is enabled by default.
+- **Web UI (Grafana)**: Binds to `0.0.0.0:3000` so it is accessible from your local host AND other devices on your LAN (e.g. `http://<LAN-IP>:3000`). Passwordless viewing is enabled by default.
 - **Database (PostgreSQL)**: Fully internalized inside Docker's isolated network (`5432/tcp`). No host ports are exposed at all, completely eliminating direct network attack vectors.
 - **Malware Protection**: Automatically strips dangerous email attachments and payload blobs from forensic failure reports (`--strip-attachment-payloads`), storing only report metadata.
 
@@ -196,11 +196,11 @@ Edit crontab with `crontab -e`:
 The entrypoint script automatically detects legacy `[elasticsearch]` sections and disables them, while injecting the new `[postgresql]` settings.
 
 #### Step-by-Step Migration:
-1. **Deploy side-by-side:** Clone this repository to a new directory. Defaults (port 3001/5433) will not collide with legacy port 3000.
+1. **Deploy side-by-side (Optional):** If your legacy stack is currently using port 3000, set `GRAFANA_PORT=3001` in `.env` to avoid port collision.
 2. **Copy configuration:** `cp /path/to/old/parsedmarc/parsedmarc.ini parsedmarc/parsedmarc.ini`
 3. **Start new stack:** `./app.sh start`
 4. **Import historical reports:** `cp /path/to/old/files/* files/ && ./app.sh parse`
-5. **Verify in Grafana:** Open `http://127.0.0.1:3001` and verify the dashboard.
+5. **Verify in Grafana:** Open `http://localhost:3000` (or `3001` if changed) and verify the dashboard.
 6. **Retire legacy stack:** Stop old stack (`docker compose down -v`), change `GRAFANA_PORT=3000` in `.env` if desired, and run `./app.sh restart`.
 
 ---
@@ -220,7 +220,7 @@ The entrypoint script automatically detects legacy `[elasticsearch]` sections an
 ### 特徴
 
 - **超軽量・省メモリ**: PostgreSQL (`postgres:16-alpine`) を採用し、スタック全体で 100 MB 未満の RAM で動作（Elasticsearch 比で 90% 以上削減）。Java / JVM は不要です。
-- **既存環境との並行テスト**: `.env` でポート（Grafana: 3001, PostgreSQL: 5433）や認証情報を変更可能なため、旧環境を動かしたまま並行して動作テストが可能です。
+- **既存環境との並行テスト**: デフォルトは標準の 3000 番ポートです。旧環境が 3000 番を使用中の場合でも、`.env` で `GRAFANA_PORT=3001` に変更すれば並行してテスト可能です。
 - **公式 PostgreSQL ダッシュボード内蔵**: Grafana 10/11 向けの公式 DMARC ダッシュボードをリポジトリ内にプリセット済みです。
 - **旧設定ファイルの自動適応**: 従来の `parsedmarc.ini` をそのままコピーするだけで動作します。古い `[elasticsearch]` 設定は自動で無効化され、PostgreSQL 接続設定が自動補完されます。
 - **便利な管理スクリプト (`app.sh`)**: 起動、停止、再起動、メモリ消費量確認、レポート解析、古いデータの削除をワンコマンドで実行できます。
@@ -252,7 +252,7 @@ The entrypoint script automatically detects legacy `[elasticsearch]` sections an
 ```bash
 ./app.sh start
 ```
-PostgreSQL（ポート `5433`）と Grafana（ポート `3001`）がローカル限定（`127.0.0.1`）で起動します。
+PostgreSQL（内部）と Grafana（標準ポート `3000`）が起動します。
 
 #### 2. DMARC レポートのパース実行
 解析したい DMARC レポート（XML, zip, gz）を `files/` ディレクトリに配置し、以下を実行します：
@@ -263,7 +263,7 @@ PostgreSQL（ポート `5433`）と Grafana（ポート `3001`）がローカル
 
 #### 3. Grafana ダッシュボードを開く
 ブラウザで以下にアクセスします：
-👉 **http://127.0.0.1:3001**
+👉 **http://localhost:3000** (または http://<LAN-IP>:3000)
 - **Dashboards > DMARC Reports — PostgreSQL** を開きます。
 
 ---
@@ -276,7 +276,7 @@ PostgreSQL（ポート `5433`）と Grafana（ポート `3001`）がローカル
 ```bash
 # Web 画面のバインド (デフォルト: 0.0.0.0 で LAN 内の他端末からもアクセス可能)
 GRAFANA_BIND_IP=0.0.0.0
-GRAFANA_PORT=3001
+GRAFANA_PORT=3000
 
 # PostgreSQL のバインド (デフォルト: 127.0.0.1 でホスト自身に限定、LAN からの DB アクセスは遮断)
 POSTGRES_BIND_IP=127.0.0.1
@@ -321,7 +321,7 @@ delete = False
 ### ネットワーク & アクセス制御（LAN アクセス vs 完全ローカル vs Cloudflare Tunnel）
 
 セキュリティを考慮した標準構成となっています：
-- **Web 画面 (Grafana)**: `0.0.0.0:3001` でリッスンし、ホストマシン自身および LAN 内の別端末（スマホや別 PC: `http://<ホストのLAN-IP>:3001`）からアクセスできます。デフォルトではパスワードなしで閲覧可能です。
+- **Web 画面 (Grafana)**: `0.0.0.0:3000` でリッスンし、ホストマシン自身および LAN 内の別端末（スマホや別 PC: `http://<ホストのLAN-IP>:3000`）からアクセスできます。デフォルトではパスワードなしで閲覧可能です。
 - **データベース (PostgreSQL)**: Docker 内部ネットワーク（`5432/tcp`）に完全に隔離され、**ホスト側のポートは一切公開されません**。外部ネットワークからの直接攻撃リスクを完全に排除しています。
 - **マルウェア防御**: DMARC 失敗レポートに含まれる危険なメール添付ファイルやペイロードバイナリを自動除去（`--strip-attachment-payloads`）し、メタデータのみを安全に保存します。
 
@@ -397,9 +397,9 @@ GRAFANA_BIND_IP=127.0.0.1
 起動スクリプトが旧設定内の `[elasticsearch]` を自動で無効化し、新しい `[postgresql]` 接続設定を自動補完します。
 
 #### ステップ・バイ・ステップ移行手順:
-1. **並行デプロイ:** 本リポジトリを別ディレクトリにクローンします。デフォルト（ポート 3001/5433）のため、稼働中の旧環境（ポート 3000）と競合しません。
+1. **並行デプロイ（任意）:** 旧環境がすでに 3000 番ポートを使用している場合は、新環境の `.env` で `GRAFANA_PORT=3001` に設定して競合を回避できます。
 2. **設定のコピー:** `cp /path/to/old/parsedmarc/parsedmarc.ini parsedmarc/parsedmarc.ini`
 3. **新スタックの起動:** `./app.sh start`
 4. **過去レポートのインポート:** `cp /path/to/old/files/* files/ && ./app.sh parse`
-5. **Grafana で動作確認:** `http://127.0.0.1:3001` を開いてダッシュボードを確認。
+5. **Grafana で動作確認:** `http://localhost:3000`（ポート変更時はそのポート）を開いてダッシュボードを確認。
 6. **旧スタックの停止・移行完了:** 旧環境を停止（`docker compose down -v` で数GBのストレージ・メモリを解放）。必要に応じて新環境の `.env` で `GRAFANA_PORT=3000` に変更し、`./app.sh restart` で完了です。
