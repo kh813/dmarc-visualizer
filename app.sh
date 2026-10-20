@@ -22,6 +22,12 @@ if [ ! -f .env ] && [ -f .env.example ]; then
     cp .env.example .env
 fi
 
+# Auto-detect parsedmarc.ini in root directory and copy to parsedmarc/
+if [ -f parsedmarc.ini ] && [ ! -f parsedmarc/parsedmarc.ini ]; then
+    echo -e "${YELLOW}[!] Found parsedmarc.ini in project root. Copying to parsedmarc/parsedmarc.ini...${NC}"
+    cp parsedmarc.ini parsedmarc/parsedmarc.ini
+fi
+
 # Load environment variables
 if [ -f .env ]; then
     # shellcheck disable=SC2046
