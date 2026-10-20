@@ -96,7 +96,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 
 #### Custom `parsedmarc.ini` (Optional)
 If you do not provide a `parsedmarc.ini`, one will be automatically generated from your `.env` settings.
-If you need advanced features like **automated IMAP mailbox polling**, place your file at `parsedmarc/parsedmarc.ini`:
+If you need advanced features like **automated IMAP/Exchange mailbox polling**, place your file at `parsedmarc/parsedmarc.ini` (or the project root):
 
 ```ini
 [general]
@@ -104,8 +104,13 @@ save_aggregate = True
 save_forensic = True
 output = /output/
 
-# Optional: Fetch DMARC reports automatically from an IMAP mailbox
-[imap]
+# Optional: Fetch DMARC reports automatically from an IMAP / Exchange mailbox
+[mailbox]
+# batch_size: Number of messages to fetch & process per batch before writing to DB (default: 10).
+# Keeping this small (e.g. 5-20) prevents RAM spikes when thousands of unread reports exist.
+batch_size = 10
+reports_folder = INBOX
+archive_folder = Archive
 host = imap.example.com
 user = dmarc@example.com
 password = your-imap-password
@@ -113,6 +118,10 @@ ssl = True
 watch = True
 delete = False
 ```
+
+> [!TIP]
+> **Peak Memory Control (`batch_size`)**: If your mailbox has accumulated thousands of unread reports, `batch_size = 10` ensures `parsedmarc` loads, parses, saves to PostgreSQL, and frees memory in small chunks. This keeps peak RAM usage below ~100MB even under heavy volume. (Legacy `[imap]` section is also supported for backward compatibility).
+
 
 ---
 
@@ -298,7 +307,7 @@ GRAFANA_ADMIN_PASSWORD=admin
 
 #### カスタム `parsedmarc.ini` (任意)
 `parsedmarc.ini` を用意しない場合でも、`.env` の設定から自動生成されます。
-**IMAP によるメール自動受信** など高度な設定を行う場合は、`parsedmarc/parsedmarc.ini` を配置してください：
+**IMAP / メールボックスによるメール自動受信** など高度な設定を行う場合は、`parsedmarc/parsedmarc.ini`（またはプロジェクト直下）に配置してください：
 
 ```ini
 [general]
@@ -306,8 +315,13 @@ save_aggregate = True
 save_forensic = True
 output = /output/
 
-# 任意: IMAP メールボックスからレポートを自動取得
-[imap]
+# 任意: メールボックス（IMAP / Exchange）からレポートを自動取得
+[mailbox]
+# batch_size: 1回に取得・パースしてDBに保存するメール件数（デフォルト: 10）
+# 未読メールが数千通溜まっている場合でも、小さく設定（5〜20）することでメモリの急上昇（スパイク）を防ぎます。
+batch_size = 10
+reports_folder = INBOX
+archive_folder = Archive
 host = imap.example.com
 user = dmarc@example.com
 password = your-imap-password
@@ -315,6 +329,9 @@ ssl = True
 watch = True
 delete = False
 ```
+
+> [!TIP]
+> **ピークメモリの抑制 (`batch_size`)**: メールボックス内に大量のレポートメールが溜まっている場合でも、`batch_size = 10` を設定することで「小分けに取得 → パース → PostgreSQLに保存 → メモリ解放」のサイクルを繰り返すため、大量処理時でもピークメモリを常に数十MB〜100MB程度に抑えられます。（※従来の `[imap]` セクション記述も後方互換性のためサポートされています）。
 
 ---
 
