@@ -1,5 +1,12 @@
 # dmarc-visualizer
 
+[English](#english) | [日本語](#日本語)
+
+---
+
+<a name="english"></a>
+## English
+
 Analyse and visualize DMARC results using lightweight, modern open-source tools.
 
 - **[parsedmarc](https://github.com/domainaware/parsedmarc)** for parsing DMARC and SMTP-TLS reports.
@@ -8,17 +15,18 @@ Analyse and visualize DMARC results using lightweight, modern open-source tools.
 
 ---
 
-## Features
+### Features
 
 - **Ultra-lightweight & Low Memory**: Uses PostgreSQL (`postgres:16-alpine`), consuming less than 100 MB RAM in total (over 90% reduction compared to Elasticsearch). No Java/JVM required.
 - **Side-by-side Testing**: Ports and database credentials are fully configurable via `.env` (defaults to Grafana on port `3001` and PostgreSQL on port `5433` so you can test alongside existing services without port conflicts).
 - **Official Dashboard Included**: Pre-configured with the official Grafana 10/11 DMARC dashboard for PostgreSQL.
 - **Auto-adapts Legacy Configs**: You can directly copy your existing `parsedmarc.ini` — legacy `[elasticsearch]` sections are automatically disabled, and PostgreSQL connections are configured seamlessly.
 - **Convenient Management Script (`app.sh`)**: Start, stop, restart, check memory status, parse reports, and prune old data with single commands.
+- **Flexible Access Control**: Defaults strictly to local-only access (`127.0.0.1`) while offering seamless integration with Cloudflare Tunnel.
 
 ---
 
-## Resource & Memory Comparison (30 Days Retention)
+### Resource & Memory Comparison (30 Days Retention)
 
 Below is an estimated real-world comparison of running `dmarc-visualizer` retaining **30 days** of DMARC report data:
 
@@ -29,49 +37,43 @@ Below is an estimated real-world comparison of running `dmarc-visualizer` retain
 | **Total Resident Memory (RAM)** | **~1.6 GB – 2.7 GB+** | **~110 MB – 150 MB** | **~95% overall reduction** |
 | **Minimum Hardware Required** | 2 GB – 4 GB RAM VPS | **512 MB – 1 GB RAM VPS / Raspberry Pi** | Runs on cheapest instances |
 
-### Why is PostgreSQL so much lighter?
+#### Why is PostgreSQL so much lighter?
 1. **Zero Java/JVM Overhead:** Elasticsearch allocates a fixed Java Heap of at least 1 GB upon launch, plus operating system page caches. PostgreSQL (written in C) allocates memory dynamically as needed and starts at only ~25 MB.
 2. **No Daily Index/Shard Accumulation:** `parsedmarc` creates separate daily indices (`dmarc_aggregate-YYYY-MM-DD`). In Elasticsearch, 30 days means 30+ open shards with Lucene terms dictionaries pinned in memory. In PostgreSQL, all data lives in standard tables indexed by clean B-Trees, adding negligible memory overhead for 30 days of data.
 3. **Safe from OOM Crashes:** Older setups frequently suffered from Out-Of-Memory (OOM) kills on modest servers. The PostgreSQL stack comfortably runs alongside your other services without resource competition.
 
 ---
 
-## Quick Start
+### Quick Start
 
-### 1. Start Services
+#### 1. Start Services
 ```bash
 ./app.sh start
 ```
-By default, this will spin up PostgreSQL (port `5433`) and Grafana (port `3001`).
+By default, this will spin up PostgreSQL (port `5433`) and Grafana (port `3001`) bound to `127.0.0.1`.
 
-### 2. Parse DMARC Reports
+#### 2. Parse DMARC Reports
 Place your DMARC XML/zip/gz reports into the `files/` directory, then run:
 ```bash
 ./app.sh parse
 ```
 `parsedmarc` will parse all files in `files/`, save records to PostgreSQL, and update Grafana.
 
-### 3. Open Grafana Dashboard
+#### 3. Open Grafana Dashboard
 Access Grafana in your web browser at:
-👉 **http://localhost:3001** (or your configured `GRAFANA_PORT`)
+👉 **http://127.0.0.1:3001** (or your configured `GRAFANA_PORT`)
 - Navigate to **Dashboards > DMARC Reports — PostgreSQL**
 
 ---
 
-## Configuration
+### Configuration
 
-### Environment Variables (`.env`)
+#### Environment Variables (`.env`)
 Configuration is managed via `.env`. A template is provided in `.env.example`:
 
 ```bash
-# Grafana Web UI Port (Default: 3001 to prevent conflicts with legacy 3000)
-# ------------------------------------------------------------------------------
 # Access Control & Port Settings
-# ------------------------------------------------------------------------------
-# IP Address to bind Grafana Web UI
-# - "127.0.0.1" (Default): Accessible ONLY from this local machine (loopback).
-#                          Completely blocks external LAN, WAN, and direct container access.
-# - "192.168.x.x"        : Accessible only from your specific local LAN IP.
+# - "127.0.0.1" (Default): Accessible ONLY from this local machine.
 # - "0.0.0.0"            : Accessible from all network interfaces (LAN + Host IP).
 GRAFANA_BIND_IP=127.0.0.1
 GRAFANA_PORT=3001
@@ -88,70 +90,14 @@ POSTGRES_PASSWORD=parsedmarc_password
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
 
-# ------------------------------------------------------------------------------
 # Cloudflare Tunnel Integration (Optional)
-# ------------------------------------------------------------------------------
-# Public URL when accessed via Cloudflare Tunnel or reverse proxy (e.g. https://dmarc.example.com)
 # GRAFANA_ROOT_URL=https://dmarc.example.com
-
-# If your cloudflared container runs in Docker, specify its external Docker network name:
 # CLOUDFLARE_TUNNEL_NETWORK=cloudflared_net
 ```
 
----
-
-## Network & Access Control (Local-only vs Cloudflare Tunnel)
-
-You can easily configure whether this visualizer is strictly isolated to your local machine, or securely accessible via Cloudflare Tunnel.
-
-### Option A: Strict Local-Only Access (Default)
-In `.env`:
-```bash
-GRAFANA_BIND_IP=127.0.0.1
-```
-- **How it works:** Grafana and PostgreSQL bind strictly to the loopback interface (`127.0.0.1`).
-- **Security:** External devices on your local network (LAN) and other isolated Docker containers (including `cloudflared`) **cannot** access the web UI directly via the host's LAN IP.
-- Only users sitting at the host machine or using SSH port forwarding can access `http://127.0.0.1:3001`.
-
-### Option B: Access via Cloudflare Tunnel (Recommended Method: Docker Shared Network)
-If `cloudflared` is running as a Docker container, you can route directly through Docker's internal network **without opening any host ports to the LAN or internet**.
-
-1. In `.env`, set your Cloudflare Tunnel Docker network and your public domain:
-   ```bash
-   CLOUDFLARE_TUNNEL_NETWORK=my_tunnel_network
-   GRAFANA_ROOT_URL=https://dmarc.example.com
-   ```
-2. Restart services:
-   ```bash
-   ./app.sh restart
-   ```
-   `app.sh` automatically attaches Grafana to your tunnel network.
-3. In your Cloudflare Zero Trust Dashboard (or `config.yml`), add an ingress rule routing to the internal container address:
-   ```yaml
-   ingress:
-     - hostname: dmarc.example.com
-       service: http://grafana:3000
-   ```
-   *Notice you connect to port `3000` via internal Docker DNS `grafana`, while `GRAFANA_BIND_IP=127.0.0.1` stays secure on the host!*
-
-### Option C: Access via Cloudflare Tunnel (Host Networking Method)
-If your `cloudflared` container connects to host ports or runs on bare metal:
-1. In `.env`:
-   ```bash
-   GRAFANA_BIND_IP=0.0.0.0
-   GRAFANA_ROOT_URL=https://dmarc.example.com
-   ```
-2. In Cloudflare Tunnel ingress rules:
-   ```yaml
-   ingress:
-     - hostname: dmarc.example.com
-       service: http://host.docker.internal:3001
-   ```
-
-### Custom `parsedmarc.ini` (Optional)
+#### Custom `parsedmarc.ini` (Optional)
 If you do not provide a `parsedmarc.ini`, one will be automatically generated from your `.env` settings.
-
-If you need advanced settings (such as **automated IMAP email fetching**), place your `parsedmarc.ini` in `parsedmarc/parsedmarc.ini`.
+If you need advanced features like **automated IMAP mailbox polling**, place your file at `parsedmarc/parsedmarc.ini`:
 
 ```ini
 [general]
@@ -169,15 +115,35 @@ watch = True
 delete = False
 ```
 
-> **Note:** You do not need to configure `[postgresql]` inside `parsedmarc.ini`. The startup script will automatically append the PostgreSQL settings from `.env`.
+---
+
+### Network & Access Control (Local-only vs Cloudflare Tunnel)
+
+#### Option A: Strict Local-Only Access (Default)
+In `.env`:
+```bash
+GRAFANA_BIND_IP=127.0.0.1
+```
+Grafana binds strictly to `127.0.0.1`. External devices on LAN and other isolated containers cannot access it.
+
+#### Option B: Access via Cloudflare Tunnel (Recommended: Docker Shared Network)
+Route directly through Docker's internal network **without opening any host ports to the LAN or internet**:
+1. In `.env`:
+   ```bash
+   CLOUDFLARE_TUNNEL_NETWORK=my_tunnel_network
+   GRAFANA_ROOT_URL=https://dmarc.example.com
+   ```
+2. Restart: `./app.sh restart`
+3. In Cloudflare Tunnel ingress rules:
+   ```yaml
+   ingress:
+     - hostname: dmarc.example.com
+       service: http://grafana:3000
+   ```
 
 ---
 
-## Management Script (`./app.sh`)
-
-`app.sh` is a wrapper script designed to simplify everyday operations and maintenance.
-
-### Commands Reference
+### Management Script (`./app.sh`)
 
 | Command | Description |
 | :--- | :--- |
@@ -192,102 +158,214 @@ delete = False
 | **`./app.sh clean-all`** | Completely purges containers and database volumes (factory reset). |
 | **`./app.sh psql`** | Opens an interactive `psql` command-line shell to the PostgreSQL database. |
 
-### Periodic Execution & Automation (Cron Examples)
+#### Automation (Cron Examples)
+Edit crontab with `crontab -e`:
 
-You can set up cron jobs on your host system to automatically process reports and purge expired data.
-
-Open your crontab editor:
 ```bash
-crontab -e
-```
-
-#### 1. Automatically Parse New Reports (Hourly)
-Processes any newly placed XML/zip files or periodically checks configured IMAP accounts:
-```bash
+# 1. Parse new reports every hour
 0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
+
+# 2. Delete reports older than 180 days every Sunday at 03:00 AM
+0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
 ```
-
-#### 2. Periodically Delete Expired Reports (e.g., Older than 180 Days)
-To keep disk usage minimal and comply with data retention policies, run `./app.sh prune [days] -y` periodically.
-
-* **Manual execution (one-off):**
-  ```bash
-  # Delete reports older than 180 days without interactive confirmation prompt
-  ./app.sh prune 180 -y
-  ```
-
-* **Cron execution example (Runs every Sunday at 03:00 AM to delete data older than 180 days):**
-  ```bash
-  0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
-  ```
-  *(Note: When executed via cron, `app.sh` automatically detects non-interactive mode and skips confirmation prompts even if `-y` is omitted).*
 
 ---
 
-## Migration Guide (From Legacy DMARC Visualizer)
+### Migration Guide (From Legacy DMARC Visualizer)
 
-If you are currently running the older Elasticsearch-based `dmarc-visualizer`, follow this guide to migrate safely with zero downtime.
-
-### Q: Will copying my old `parsedmarc.ini` work directly?
+#### Q: Will copying my old `parsedmarc.ini` work directly?
 **Yes, you can copy it directly.**
-- The startup entrypoint automatically detects legacy `[elasticsearch]` sections and disables them so they won't cause connection errors.
-- It automatically appends the new `[postgresql]` connection settings from `.env`.
-- Any custom `[general]`, `[imap]`, or `[mailbox]` settings from your old config will be completely preserved.
+The entrypoint script automatically detects legacy `[elasticsearch]` sections and disables them, while injecting the new `[postgresql]` settings.
+
+#### Step-by-Step Migration:
+1. **Deploy side-by-side:** Clone this repository to a new directory. Defaults (port 3001/5433) will not collide with legacy port 3000.
+2. **Copy configuration:** `cp /path/to/old/parsedmarc/parsedmarc.ini parsedmarc/parsedmarc.ini`
+3. **Start new stack:** `./app.sh start`
+4. **Import historical reports:** `cp /path/to/old/files/* files/ && ./app.sh parse`
+5. **Verify in Grafana:** Open `http://127.0.0.1:3001` and verify the dashboard.
+6. **Retire legacy stack:** Stop old stack (`docker compose down -v`), change `GRAFANA_PORT=3000` in `.env` if desired, and run `./app.sh restart`.
+
+---
+---
+
+<a name="japanese"></a>
+## 日本語
+
+オープンソースの最新軽量スタックを用いた DMARC 解析・可視化ツールです。
+
+- **[parsedmarc](https://github.com/domainaware/parsedmarc)**: DMARC および SMTP-TLS レポートの解析エンジン
+- **[PostgreSQL](https://www.postgresql.org/)**: 軽量・永続ストレージ（Elasticsearch を廃止し、Java 依存を排除して省メモリ化）
+- **[Grafana](https://grafana.com/)**: レポート可視化ダッシュボード
 
 ---
 
-### Step-by-Step Migration
+### 特徴
 
-#### Step 1: Deploy Side-by-Side (Keep Legacy Running)
-Do not stop your old DMARC Visualizer yet. Clone or place this repository in a separate directory:
-```bash
-git clone https://github.com/kh813/dmarc-visualizer.git dmarc-visualizer-new
-cd dmarc-visualizer-new
-```
-Because this stack defaults to **Grafana Port `3001`** and **PostgreSQL Port `5433`**, it will not conflict with your existing setup running on port `3000`.
+- **超軽量・省メモリ**: PostgreSQL (`postgres:16-alpine`) を採用し、スタック全体で 100 MB 未満の RAM で動作（Elasticsearch 比で 90% 以上削減）。Java / JVM は不要です。
+- **既存環境との並行テスト**: `.env` でポート（Grafana: 3001, PostgreSQL: 5433）や認証情報を変更可能なため、旧環境を動かしたまま並行して動作テストが可能です。
+- **公式 PostgreSQL ダッシュボード内蔵**: Grafana 10/11 向けの公式 DMARC ダッシュボードをリポジトリ内にプリセット済みです。
+- **旧設定ファイルの自動適応**: 従来の `parsedmarc.ini` をそのままコピーするだけで動作します。古い `[elasticsearch]` 設定は自動で無効化され、PostgreSQL 接続設定が自動補完されます。
+- **便利な管理スクリプト (`app.sh`)**: 起動、停止、再起動、メモリ消費量確認、レポート解析、古いデータの削除をワンコマンドで実行できます。
+- **安全なアクセス制御**: デフォルトでローカル限定（`127.0.0.1`）に制限されており、必要に応じて Cloudflare Tunnel とも安全に連携可能です。
 
-#### Step 2: Copy Your Existing Configuration
-Copy your old `parsedmarc.ini` into `parsedmarc/`:
-```bash
-cp /path/to/old/dmarc-visualizer/parsedmarc/parsedmarc.ini parsedmarc/parsedmarc.ini
-```
+---
 
-#### Step 3: Start the New Stack
+### リソース・メモリ消費量の比較（30日分保持時）
+
+一般的な運用規模（数ドメイン、1日数百〜数千通）で **30日分の DMARC データを保持・検索した場合の見込み RAM 使用量** です：
+
+| コンポーネント | **旧スタック (Elasticsearch 7.x)** | **本フォーク (PostgreSQL 16)** | 削減効果 |
+| :--- | :--- | :--- | :--- |
+| **データベース本体** | **約 1.5 GB 〜 2.5 GB+** | **約 35 MB 〜 60 MB** | **約 97% 削減** |
+| **Grafana (Web画面)** | 約 100 MB 〜 150 MB | 約 75 MB 〜 90 MB | プラグイン不要化で軽量化 |
+| **全体合計 (常駐RAM)** | **約 1.6 GB 〜 2.7 GB+** | **約 110 MB 〜 150 MB** | **約 95% 削減** |
+| **推奨ハードウェアスペック**| 最低 2 GB 〜 4 GB RAM の VPS | **512 MB 〜 1 GB RAM の格安VPS / ラズパイ** | 最安値サーバーで余裕で動作 |
+
+#### なぜ PostgreSQL はこれほど軽いのか？
+1. **JVM (Java仮想マシン) のオーバーヘッドがゼロ:** Elasticsearch は起動するだけで最低 1 GB のヒープメモリを確保しますが、PostgreSQL (C言語製) は起動時わずか 25 MB 程度で、必要な分だけメモリを使います。
+2. **日次シャード蓄積問題の解消:** `parsedmarc` は日付ごとにインデックスを分割するため、Elasticsearch では 30 日分で 30 個以上のシャードがメモリを圧迫します。PostgreSQL では単一テーブルに B-Tree インデックスを張るだけなので、30日分蓄積してもメモリ増加はごくわずかです。
+3. **OOM (メモリ不足クラッシュ) からの解放:** メモリの少ないサーバーで頻発していた OOM Killer による突然のコンテナ強制終了を防止し、他のアプリと安全に共存できます。
+
+---
+
+### クイックスタート
+
+#### 1. サービスの起動
 ```bash
 ./app.sh start
 ```
-Check that the containers are healthy:
-```bash
-./app.sh status
-```
+PostgreSQL（ポート `5433`）と Grafana（ポート `3001`）がローカル限定（`127.0.0.1`）で起動します。
 
-#### Step 4: Import Historical Reports
-If you saved your old XML/zip/gz report files, copy them into the `files/` directory:
+#### 2. DMARC レポートのパース実行
+解析したい DMARC レポート（XML, zip, gz）を `files/` ディレクトリに配置し、以下を実行します：
 ```bash
-cp /path/to/old/dmarc-visualizer/files/* files/
 ./app.sh parse
 ```
-`parsedmarc` will parse all historical files and index them into PostgreSQL.
+`files/` 内の全ファイルがパースされ、PostgreSQL へ保存されて Grafana に反映されます。
 
-#### Step 5: Verify in Grafana
-Open **http://localhost:3001** in your browser.
-Open **Dashboards > DMARC Reports — PostgreSQL** and verify your domain data and statistics appear accurately.
+#### 3. Grafana ダッシュボードを開く
+ブラウザで以下にアクセスします：
+👉 **http://127.0.0.1:3001**
+- **Dashboards > DMARC Reports — PostgreSQL** を開きます。
 
-#### Step 6: Retire the Legacy Stack
-Once you have confirmed that the new stack works as expected:
+---
 
-1. Stop the legacy stack:
+### 設定
+
+#### 環境変数 (`.env`)
+`.env` ファイルでポートや認証情報を設定します（テンプレート: `.env.example`）：
+
+```bash
+# アクセス制御 & ポート設定
+# - "127.0.0.1" (デフォルト): このマシン自身からのみアクセス可能（LAN・外部遮断）
+# - "0.0.0.0"            : 全インターフェースで待ち受け（LAN内からアクセス可能）
+GRAFANA_BIND_IP=127.0.0.1
+GRAFANA_PORT=3001
+
+POSTGRES_BIND_IP=127.0.0.1
+POSTGRES_PORT=5433
+
+# PostgreSQL 認証情報
+POSTGRES_DB=dmarc
+POSTGRES_USER=parsedmarc
+POSTGRES_PASSWORD=parsedmarc_password
+
+# Grafana 管理者情報
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
+
+# Cloudflare Tunnel 連携設定 (任意)
+# GRAFANA_ROOT_URL=https://dmarc.example.com
+# CLOUDFLARE_TUNNEL_NETWORK=cloudflared_net
+```
+
+#### カスタム `parsedmarc.ini` (任意)
+`parsedmarc.ini` を用意しない場合でも、`.env` の設定から自動生成されます。
+**IMAP によるメール自動受信** など高度な設定を行う場合は、`parsedmarc/parsedmarc.ini` を配置してください：
+
+```ini
+[general]
+save_aggregate = True
+save_forensic = True
+output = /output/
+
+# 任意: IMAP メールボックスからレポートを自動取得
+[imap]
+host = imap.example.com
+user = dmarc@example.com
+password = your-imap-password
+ssl = True
+watch = True
+delete = False
+```
+
+---
+
+### ネットワーク & アクセス制御（ローカル限定 vs Cloudflare Tunnel）
+
+#### オプション A: 完全ローカル限定（デフォルト）
+`.env` で設定：
+```bash
+GRAFANA_BIND_IP=127.0.0.1
+```
+ホストの `127.0.0.1` にのみバインドされます。同一 LAN 内の別マシンや、同一ホスト上の別コンテナ（`cloudflared` 含む）からも直接アクセスはできません。
+
+#### オプション B: Cloudflare Tunnel 経由でのアクセス（推奨: Docker 共有ネットワーク方式）
+ホストマシンのポートを LAN やインターネットに開けることなく、Docker 内部ネットワーク経由で安全に公開できます：
+
+1. `.env` を設定：
    ```bash
-   cd /path/to/old/dmarc-visualizer
-   docker compose down -v  # Frees up several gigabytes of Elasticsearch memory & storage
+   CLOUDFLARE_TUNNEL_NETWORK=my_tunnel_network
+   GRAFANA_ROOT_URL=https://dmarc.example.com
    ```
-2. (Optional) Switch the new stack to port `3000`:
-   Edit `.env` in the new stack directory:
-   ```bash
-   GRAFANA_PORT=3000
+2. 再起動: `./app.sh restart`
+3. Cloudflare 側の Ingress ルールに以下を追加：
+   ```yaml
+   ingress:
+     - hostname: dmarc.example.com
+       service: http://grafana:3000
    ```
-   Apply changes:
-   ```bash
-   ./app.sh restart
-   ```
-   The new lightweight visualizer is now serving on **http://localhost:3000**!
+
+---
+
+### 管理スクリプト (`./app.sh`)
+
+| コマンド | 説明 |
+| :--- | :--- |
+| **`./app.sh start`** (または `up`) | バックグラウンドで全サービスを起動 |
+| **`./app.sh stop`** (または `down`) | 全サービスを停止 |
+| **`./app.sh restart`** | 全サービスを一括再起動 |
+| **`./app.sh status`** (または `ps`) | 稼働状況およびリアルタイムのメモリ・CPU 使用量を表示 |
+| **`./app.sh logs [service]`** | ログをリアルタイム表示（例: `./app.sh logs grafana`） |
+| **`./app.sh parse`** | `./files/` 内の全レポートをパースして DB へ投入 |
+| **`./app.sh prune [days] [-y]`** | 指定日数（デフォルト: 90日）より古いレポートを削除。`-y` で確認省略 |
+| **`./app.sh clean-files`** | `./files/` および `./output_files/` 内の一時ファイルを削除 |
+| **`./app.sh clean-all`** | コンテナおよび DB ボリュームを完全消去（工場出荷リセット） |
+| **`./app.sh psql`** | PostgreSQL の対話型 `psql` シェルに接続 |
+
+#### 定期実行の自動化 (Cron 設定例)
+`crontab -e` でホストマシンの cron に登録します：
+
+```bash
+# 1. 毎時 0 分に新着レポートを自動パース
+0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
+
+# 2. 毎週日曜 午前 3 時に 180 日を超えた古いレポートを自動削除
+0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
+```
+
+---
+
+### 旧 DMARC Visualizer からの移行ガイド
+
+#### Q: 旧バージョンの `parsedmarc.ini` をそのままコピーして動きますか？
+**はい、そのままコピーして動作します。**
+起動スクリプトが旧設定内の `[elasticsearch]` を自動で無効化し、新しい `[postgresql]` 接続設定を自動補完します。
+
+#### ステップ・バイ・ステップ移行手順:
+1. **並行デプロイ:** 本リポジトリを別ディレクトリにクローンします。デフォルト（ポート 3001/5433）のため、稼働中の旧環境（ポート 3000）と競合しません。
+2. **設定のコピー:** `cp /path/to/old/parsedmarc/parsedmarc.ini parsedmarc/parsedmarc.ini`
+3. **新スタックの起動:** `./app.sh start`
+4. **過去レポートのインポート:** `cp /path/to/old/files/* files/ && ./app.sh parse`
+5. **Grafana で動作確認:** `http://127.0.0.1:3001` を開いてダッシュボードを確認。
+6. **旧スタックの停止・移行完了:** 旧環境を停止（`docker compose down -v` で数GBのストレージ・メモリを解放）。必要に応じて新環境の `.env` で `GRAFANA_PORT=3000` に変更し、`./app.sh restart` で完了です。
