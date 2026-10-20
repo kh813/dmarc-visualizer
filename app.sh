@@ -65,11 +65,7 @@ print_network_info() {
         echo -e "${CYAN}👉 Web Access (Grafana):   ${GREEN}Bound to http://${GRAFANA_BIND_IP}:${GRAFANA_PORT}${NC}"
     fi
 
-    if [ "$POSTGRES_BIND_IP" == "127.0.0.1" ]; then
-        echo -e "${CYAN}👉 DB Access (PostgreSQL): ${GREEN}Secure (127.0.0.1:${POSTGRES_PORT}) — LAN access blocked${NC}"
-    else
-        echo -e "${CYAN}👉 DB Access (PostgreSQL): ${YELLOW}Bound to ${POSTGRES_BIND_IP}:${POSTGRES_PORT}${NC}"
-    fi
+    echo -e "${CYAN}👉 DB Access (PostgreSQL): ${GREEN}Internal-only (No host ports exposed — 100% isolated to Docker network)${NC}"
 
     if [ -n "$CLOUDFLARE_TUNNEL_NETWORK" ]; then
         echo -e "${CYAN}👉 Cloudflare Tunnel:       ${GREEN}Connected to Docker network '${CLOUDFLARE_TUNNEL_NETWORK}'${NC}"

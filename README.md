@@ -119,17 +119,17 @@ delete = False
 ### Network & Access Control (LAN Access vs Local-Only vs Cloudflare Tunnel)
 
 By default, the stack is configured with security in mind:
-- **Web UI (Grafana)**: Binds to `0.0.0.0:3001` so it is accessible from your local host AND other devices on your LAN (e.g. `http://<LAN-IP>:3001`).
-- **Database (PostgreSQL)**: Binds strictly to `127.0.0.1:5433` so other LAN devices **cannot** access PostgreSQL directly. (Grafana connects internally via Docker's private bridge network).
+- **Web UI (Grafana)**: Binds to `0.0.0.0:3001` so it is accessible from your local host AND other devices on your LAN (e.g. `http://<LAN-IP>:3001`). Passwordless viewing is enabled by default.
+- **Database (PostgreSQL)**: Fully internalized inside Docker's isolated network (`5432/tcp`). No host ports are exposed at all, completely eliminating direct network attack vectors.
+- **Malware Protection**: Automatically strips dangerous email attachments and payload blobs from forensic failure reports (`--strip-attachment-payloads`), storing only report metadata.
 
-#### Option A: Standard Setup (Web on LAN, Database Local-Only)
+#### Option A: Standard Setup (Web on LAN, Database Fully Internal)
 In `.env`:
 ```bash
 GRAFANA_BIND_IP=0.0.0.0
-POSTGRES_BIND_IP=127.0.0.1
 ```
 - Dashboard is reachable from other PCs or smartphones on your Wi-Fi/LAN.
-- PostgreSQL database is strictly isolated to the host machine.
+- PostgreSQL database is strictly isolated inside the Docker network.
 
 #### Option B: Strict Local-Only Web Access (Lockdown)
 If you want to forbid LAN devices from accessing even the web UI:
@@ -153,6 +153,11 @@ Route directly through Docker's internal network **without opening any host port
      - hostname: dmarc.example.com
        service: http://grafana:3000
    ```
+
+#### Security Roadmap (Planned Future Hardening)
+- [ ] **Mandatory Authentication**: Option to disable anonymous viewer mode (`GRAFANA_ANONYMOUS_ENABLED=false`) with user password or Cloudflare Access SSO.
+- [ ] **Non-root Container Execution**: Run `parsedmarc` under an unprivileged user (Least Privilege Principle).
+- [ ] **Default Password Warning**: Interactive warning when running with default `admin` credentials.
 
 ---
 
@@ -316,17 +321,17 @@ delete = False
 ### ネットワーク & アクセス制御（LAN アクセス vs 完全ローカル vs Cloudflare Tunnel）
 
 セキュリティを考慮した標準構成となっています：
-- **Web 画面 (Grafana)**: `0.0.0.0:3001` でリッスンし、ホストマシン自身および LAN 内の別端末（スマホや別 PC: `http://<ホストのLAN-IP>:3001`）からアクセスできます。
-- **データベース (PostgreSQL)**: `127.0.0.1:5433` に厳格に限定され、LAN 内の他端末から DB ポートへの直接接続は遮断されます（Grafana との通信は Docker 内部の閉じたネットワークで行われるため安全です）。
+- **Web 画面 (Grafana)**: `0.0.0.0:3001` でリッスンし、ホストマシン自身および LAN 内の別端末（スマホや別 PC: `http://<ホストのLAN-IP>:3001`）からアクセスできます。デフォルトではパスワードなしで閲覧可能です。
+- **データベース (PostgreSQL)**: Docker 内部ネットワーク（`5432/tcp`）に完全に隔離され、**ホスト側のポートは一切公開されません**。外部ネットワークからの直接攻撃リスクを完全に排除しています。
+- **マルウェア防御**: DMARC 失敗レポートに含まれる危険なメール添付ファイルやペイロードバイナリを自動除去（`--strip-attachment-payloads`）し、メタデータのみを安全に保存します。
 
-#### オプション A: 標準設定（Web は LAN 内公開、DB はローカル限定・推奨）
+#### オプション A: 標準設定（Web は LAN 内公開、DB は完全内部化・推奨）
 `.env` の設定：
 ```bash
 GRAFANA_BIND_IP=0.0.0.0
-POSTGRES_BIND_IP=127.0.0.1
 ```
 - ブラウザ画面は LAN 内のどの端末からでも閲覧可能。
-- データベースはホストマシン自身からのみアクセス可能で安全。
+- データベースは Docker 内部に隔離され、ホストや LAN にポートを晒さないため安全。
 
 #### オプション B: Web 画面も完全ローカル限定にする場合（完全ロックダウン）
 LAN 内の他端末からの Web 画面アクセスも禁止したい場合：
@@ -349,6 +354,11 @@ GRAFANA_BIND_IP=127.0.0.1
      - hostname: dmarc.example.com
        service: http://grafana:3000
    ```
+
+#### 今後のセキュリティ強化計画 (Roadmap)
+- [ ] **ログイン認証の必須化**: 匿名閲覧モードの無効化（`GRAFANA_ANONYMOUS_ENABLED=false`）と、パスワードまたは Cloudflare Access (SSO) 連携の容易化。
+- [ ] **非 root ユーザー実行**: `parsedmarc` コンテナの非特権ユーザー（Rootless）実行。
+- [ ] **デフォルトパスワード警告**: 初期パスワード（`admin`）のまま本番稼働している場合の自動注意喚起。
 
 ---
 

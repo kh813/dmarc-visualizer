@@ -10,4 +10,4 @@ WORKDIR /
 RUN mkdir -p /input /output
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["parsedmarc", "-c", "/etc/parsedmarc.ini", "-r", "/input", "--debug"]
+CMD ["parsedmarc", "-c", "/etc/parsedmarc.ini", "-r", "/input", "--strip-attachment-payloads", "--debug"]
