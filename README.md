@@ -169,17 +169,40 @@ delete = False
 | **`./app.sh status`** (or `ps`) | Displays container status and real-time RAM/CPU resource consumption. |
 | **`./app.sh logs [service]`** | Follows container logs in real time (e.g., `./app.sh logs grafana`). |
 | **`./app.sh parse`** | Parses all DMARC reports in `./files/` into the database. |
-| **`./app.sh prune [days]`** | Prunes reports older than N days (default: 90 days) from the database. |
+| **`./app.sh prune [days] [-y]`** | Prunes reports older than N days (default: 90 days). Use `-y` for cron / non-interactive. |
 | **`./app.sh clean-files`** | Clears temporary files from `./files/` and `./output_files/`. |
 | **`./app.sh clean-all`** | Completely purges containers and database volumes (factory reset). |
 | **`./app.sh psql`** | Opens an interactive `psql` command-line shell to the PostgreSQL database. |
 
-### Periodic Execution (Cron)
-To automatically process new reports placed into `files/` or periodically fetch from IMAP:
+### Periodic Execution & Automation (Cron Examples)
+
+You can set up cron jobs on your host system to automatically process reports and purge expired data.
+
+Open your crontab editor:
 ```bash
-# Process incoming reports every hour
-0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >/dev/null 2>&1
+crontab -e
 ```
+
+#### 1. Automatically Parse New Reports (Hourly)
+Processes any newly placed XML/zip files or periodically checks configured IMAP accounts:
+```bash
+0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
+```
+
+#### 2. Periodically Delete Expired Reports (e.g., Older than 180 Days)
+To keep disk usage minimal and comply with data retention policies, run `./app.sh prune [days] -y` periodically.
+
+* **Manual execution (one-off):**
+  ```bash
+  # Delete reports older than 180 days without interactive confirmation prompt
+  ./app.sh prune 180 -y
+  ```
+
+* **Cron execution example (Runs every Sunday at 03:00 AM to delete data older than 180 days):**
+  ```bash
+  0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
+  ```
+  *(Note: When executed via cron, `app.sh` automatically detects non-interactive mode and skips confirmation prompts even if `-y` is omitted).*
 
 ---
 

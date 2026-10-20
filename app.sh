@@ -86,7 +86,7 @@ usage() {
     echo -e "  ${GREEN}status | ps${NC}        Show service status and resource (RAM) usage"
     echo -e "  ${GREEN}logs [service]${NC}     View service logs in real time (e.g. ./app.sh logs grafana)"
     echo -e "  ${GREEN}parse${NC}              Parse all report files in ./files/ into PostgreSQL"
-    echo -e "  ${GREEN}prune [days]${NC}       Delete reports older than [days] (default: 90 days)"
+    echo -e "  ${GREEN}prune [days] [-y]${NC}  Delete reports older than [days] (default: 90 days, -y for cron)"
     echo -e "  ${GREEN}clean-files${NC}        Delete temporary files from ./files/ and ./output_files/"
     echo -e "  ${GREEN}clean-all${NC}          Destroy all containers and purge all database volume data"
     echo -e "  ${GREEN}psql${NC}               Open an interactive PostgreSQL terminal session"
@@ -151,17 +151,39 @@ cmd_parse() {
 }
 
 cmd_prune() {
-    local days="${1:-90}"
-    if ! [[ "$days" =~ ^[0-9]+$ ]]; then
-        echo -e "${RED}[✗] Error: Days parameter must be an integer.${NC}"
-        exit 1
+    local days="90"
+    local auto_confirm=false
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -y|--yes|-f|--force)
+                auto_confirm=true
+                shift
+                ;;
+            *)
+                if [[ "$1" =~ ^[0-9]+$ ]]; then
+                    days="$1"
+                else
+                    echo -e "${RED}[✗] Error: Invalid argument '$1'. Expected number of days or -y/--yes.${NC}"
+                    exit 1
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    # If stdin is not a terminal (e.g., cron job), auto confirm
+    if [ ! -t 0 ]; then
+        auto_confirm=true
     fi
 
     echo -e "${YELLOW}[!] Pruning reports older than ${days} days...${NC}"
-    read -rp "Are you sure you want to delete reports older than ${days} days from PostgreSQL? [y/N]: " confirm
-    if [[ ! "$confirm" =~ ^[yY]([eE][sS])?$ ]]; then
-        echo -e "${BLUE}[*] Cancelled.${NC}"
-        exit 0
+    if [ "$auto_confirm" != "true" ]; then
+        read -rp "Are you sure you want to delete reports older than ${days} days from PostgreSQL? [y/N]: " confirm
+        if [[ ! "$confirm" =~ ^[yY]([eE][sS])?$ ]]; then
+            echo -e "${BLUE}[*] Cancelled.${NC}"
+            exit 0
+        fi
     fi
 
     # Execute deletion in PostgreSQL using CASCADE
@@ -172,7 +194,7 @@ DELETE FROM dmarc_failure_report WHERE arrival_date_utc < NOW() - INTERVAL '${da
 DELETE FROM smtp_tls_report WHERE end_date < NOW() - INTERVAL '${days} days';
 COMMIT;
 EOF
-    echo -e "${GREEN}[✔] Old reports older than ${days} days successfully pruned!${NC}"
+    echo -e "${GREEN}[✔] Reports older than ${days} days successfully pruned!${NC}"
 }
 
 cmd_clean_files() {
