@@ -114,17 +114,21 @@ port = 993
 ssl = True
 user = dmarc@example.com
 password = your-imap-password
+
+# Folder & processing options belong in [mailbox] (not [imap]) since parsedmarc 8.0
+[mailbox]
 watch = True
 delete = False
 # reports_folder = INBOX      # Folder to read reports from (default: INBOX)
 # archive_folder = Archive    # Folder to move processed reports to (default: Archive)
+#                             # Use "/" as separator, without "INBOX." prefix (e.g. Archive/Aggregate)
 # batch_size: Number of messages to fetch & process per batch before writing to DB (default: 10).
 # Keeping this small (e.g. 5-20) prevents RAM spikes when thousands of unread reports exist.
 batch_size = 10
 ```
 
 > [!TIP]
-> **Peak Memory Control (`batch_size`)**: If your mailbox has accumulated thousands of unread reports, `batch_size = 10` ensures `parsedmarc` loads, parses, saves to PostgreSQL, and frees memory in small chunks. This keeps peak RAM usage below ~100MB even under heavy volume. (Legacy `[imap]` section is also supported for backward compatibility).
+> **Peak Memory Control (`batch_size`)**: If your mailbox has accumulated thousands of unread reports, `batch_size = 10` ensures `parsedmarc` loads, parses, saves to PostgreSQL, and frees memory in small chunks. This keeps peak RAM usage below ~100MB even under heavy volume. (Legacy configs with `watch` / `batch_size` / `reports_folder` / `archive_folder` under `[imap]` still work with a deprecation warning, but `delete` under `[imap]` is silently ignored — move these options to `[mailbox]`.)
 
 
 ---
@@ -329,17 +333,21 @@ port = 993
 ssl = True
 user = dmarc@example.com
 password = your-imap-password
+
+# フォルダ・処理方法の設定は parsedmarc 8.0 以降 [imap] ではなく [mailbox] に書きます
+[mailbox]
 watch = True
 delete = False
 # reports_folder = INBOX      # レポート読み込み元フォルダ（デフォルト: INBOX）
 # archive_folder = Archive    # 処理済みメール移動先フォルダ（デフォルト: Archive）
+#                             # 区切りは "/"、"INBOX." は付けない（例: Archive/Aggregate）
 # batch_size: 1回に取得・パースしてDBに保存するメール件数（デフォルト: 10）
 # 未読メールが数千通溜まっている場合でも、小さく設定（5〜20）することでメモリの急上昇（スパイク）を防ぎます。
 batch_size = 10
 ```
 
 > [!TIP]
-> **ピークメモリの抑制 (`batch_size`)**: メールボックス内に大量のレポートメールが溜まっている場合でも、`batch_size = 10` を設定することで「小分けに取得 → パース → PostgreSQLに保存 → メモリ解放」のサイクルを繰り返すため、大量処理時でもピークメモリを常に数十MB〜100MB程度に抑えられます。旧バージョンの `[imap]` 形式の設定ファイルもそのまま使えます。
+> **ピークメモリの抑制 (`batch_size`)**: メールボックス内に大量のレポートメールが溜まっている場合でも、`batch_size = 10` を設定することで「小分けに取得 → パース → PostgreSQLに保存 → メモリ解放」のサイクルを繰り返すため、大量処理時でもピークメモリを常に数十MB〜100MB程度に抑えられます。旧形式（`[imap]` に `watch` / `batch_size` / `reports_folder` / `archive_folder` を記述）も警告付きで動作しますが、`[imap]` 内の `delete` は無視されるため、これらは `[mailbox]` へ移してください。
 
 ---
 
