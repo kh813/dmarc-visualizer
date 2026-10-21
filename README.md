@@ -1,7 +1,7 @@
 # dmarc-visualizer-lite
 
 > **Ultra-lightweight, modern DMARC Visualizer powered by PostgreSQL and Grafana.**  
-> An optimized, low-memory successor to [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) that reduces RAM usage by over 95% (~100 MB total).
+> An optimized, low-memory successor to [debricked/dmarc-visualizer](https://github.com/debricked/dmarc-visualizer) that reduces RAM usage by over 95% (~100 MB total).
 
 [English](#english) | [日本語](#日本語)
 
@@ -245,7 +245,7 @@ The entrypoint script automatically detects legacy `[elasticsearch]` sections an
 ## 日本語
 
 PostgreSQL と Grafana を用いた、超軽量・省メモリなモダン DMARC 解析・可視化ツールです。  
-※ [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) の後継・軽量化プロジェクトです。Elasticsearch を PostgreSQL に置き換えることで RAM 使用量を 95% 以上削減（約100MBで動作）し、小規模なVPSや軽量サーバーでも軽快・安全に動くよう再設計されています。
+※ [debricked/dmarc-visualizer](https://github.com/debricked/dmarc-visualizer) の後継・軽量化プロジェクトです。Elasticsearch を PostgreSQL に置き換えることで RAM 使用量を 95% 以上削減（約100MBで動作）し、小規模なVPSや軽量サーバーでも軽快・安全に動くよう再設計されています。
 
 - **[parsedmarc](https://github.com/domainaware/parsedmarc)**: DMARC および SMTP-TLS レポートの解析エンジン
 - **[PostgreSQL](https://www.postgresql.org/)**: 軽量・永続ストレージ（Elasticsearch を廃止し、Java 依存を排除して省メモリ化）
