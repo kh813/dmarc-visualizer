@@ -58,7 +58,7 @@ dc() {
 
 print_header() {
     echo -e "${CYAN}======================================================${NC}"
-    echo -e "${CYAN}         DMARC Visualizer Management Script           ${NC}"
+    echo -e "${CYAN}       DMARC Visualizer Lite Management Script        ${NC}"
     echo -e "${CYAN}======================================================${NC}"
 }
 
@@ -172,7 +172,7 @@ check_port_conflict() {
 
 cmd_start() {
     check_port_conflict "$GRAFANA_PORT"
-    echo -e "${BLUE}[*] Starting DMARC Visualizer services...${NC}"
+    echo -e "${BLUE}[*] Starting DMARC Visualizer Lite services...${NC}"
     mkdir -p files output_files
     dc up -d --build
     echo -e "${GREEN}[✔] Services started successfully!${NC}"
@@ -180,14 +180,14 @@ cmd_start() {
 }
 
 cmd_stop() {
-    echo -e "${BLUE}[*] Stopping DMARC Visualizer services...${NC}"
+    echo -e "${BLUE}[*] Stopping DMARC Visualizer Lite services...${NC}"
     dc down
     echo -e "${GREEN}[✔] Services stopped.${NC}"
 }
 
 cmd_restart() {
     check_port_conflict "$GRAFANA_PORT"
-    echo -e "${BLUE}[*] Restarting DMARC Visualizer services...${NC}"
+    echo -e "${BLUE}[*] Restarting DMARC Visualizer Lite services...${NC}"
     dc restart
     echo -e "${GREEN}[✔] Services restarted!${NC}"
     print_network_info

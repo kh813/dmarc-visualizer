@@ -1,4 +1,7 @@
-# dmarc-visualizer
+# dmarc-visualizer-lite
+
+> **Ultra-lightweight, modern DMARC Visualizer powered by PostgreSQL and Grafana.**  
+> An optimized, low-memory successor to [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) that reduces RAM usage by over 95% (~100 MB total).
 
 [English](#english) | [日本語](#日本語)
 
@@ -28,7 +31,7 @@ Analyse and visualize DMARC results using lightweight, modern open-source tools.
 
 ### Resource & Memory Comparison (30 Days Retention)
 
-Below is an estimated real-world comparison of running `dmarc-visualizer` retaining **30 days** of DMARC report data:
+Below is an estimated real-world comparison of running `dmarc-visualizer-lite` retaining **30 days** of DMARC report data:
 
 | Component | **Legacy Stack (Elasticsearch 7.x)** | **This Fork (PostgreSQL 16)** | Difference |
 | :--- | :--- | :--- | :--- |
@@ -213,10 +216,10 @@ Edit crontab with `crontab -e`:
 
 ```bash
 # 1. Parse new reports every hour
-0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
+0 * * * * cd /path/to/dmarc-visualizer-lite && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
 
 # 2. Delete reports older than 180 days every Sunday at 03:00 AM
-0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
+0 3 * * 0 cd /path/to/dmarc-visualizer-lite && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
 ```
 
 ---
@@ -241,7 +244,8 @@ The entrypoint script automatically detects legacy `[elasticsearch]` sections an
 <a name="japanese"></a>
 ## 日本語
 
-オープンソースの最新軽量スタックを用いた DMARC 解析・可視化ツールです。
+PostgreSQL と Grafana を用いた、超軽量・省メモリなモダン DMARC 解析・可視化ツールです。  
+※ [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) の後継・軽量化プロジェクトです。Elasticsearch を PostgreSQL に置き換えることで RAM 使用量を 95% 以上削減（約100MBで動作）し、小規模VPSやラズパイでも軽快・安全に動くよう再設計されています。
 
 - **[parsedmarc](https://github.com/domainaware/parsedmarc)**: DMARC および SMTP-TLS レポートの解析エンジン
 - **[PostgreSQL](https://www.postgresql.org/)**: 軽量・永続ストレージ（Elasticsearch を廃止し、Java 依存を排除して省メモリ化）
@@ -445,10 +449,10 @@ GRAFANA_BIND_IP=127.0.0.1
 
 ```bash
 # 1. 毎時 0 分に新着レポートを自動パース
-0 * * * * cd /path/to/dmarc-visualizer && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
+0 * * * * cd /path/to/dmarc-visualizer-lite && ./app.sh parse >> /var/log/dmarc-parse.log 2>&1
 
 # 2. 毎週日曜 午前 3 時に 180 日を超えた古いレポートを自動削除
-0 3 * * 0 cd /path/to/dmarc-visualizer && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
+0 3 * * 0 cd /path/to/dmarc-visualizer-lite && ./app.sh prune 180 -y >> /var/log/dmarc-prune.log 2>&1
 ```
 
 ---
