@@ -425,17 +425,16 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisLabel": "Messages",
-            "drawStyle": "line",
-            "fillOpacity": 20,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "scheme",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             }
           }
         },
@@ -580,17 +579,16 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisLabel": "Messages",
-            "drawStyle": "line",
-            "fillOpacity": 20,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "scheme",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             }
           }
         },
@@ -675,17 +673,16 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisLabel": "Messages",
-            "drawStyle": "line",
-            "fillOpacity": 20,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "scheme",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
-              "mode": "none"
+              "mode": "normal"
             }
           }
         },
@@ -770,13 +767,12 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisLabel": "Messages",
-            "drawStyle": "line",
-            "fillOpacity": 20,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "scheme",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
+            "lineWidth": 1,
             "pointSize": 5,
-            "showPoints": "auto",
+            "showPoints": "never",
             "spanNulls": false,
             "stacking": {
               "group": "A",
