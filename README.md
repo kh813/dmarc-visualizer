@@ -85,7 +85,7 @@ POSTGRES_DB=dmarc
 POSTGRES_USER=parsedmarc
 POSTGRES_PASSWORD=parsedmarc_password
 
-# Grafana Admin Credentials
+# Grafana Admin Credentials (applied only on the very first start; see "Changing the Grafana Admin Password")
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
 
@@ -170,6 +170,21 @@ Route directly through Docker's internal network **without opening any host port
      - hostname: dmarc.example.com
        service: http://grafana:3000
    ```
+
+#### Changing the Grafana Admin Password
+Anonymous viewing (`GRAFANA_ANONYMOUS_ENABLED=true`) does **not** disable the admin login. With the default `admin` / `admin`, anyone who can reach the Web UI (e.g. any device on your LAN with Option A) can sign in as Grafana admin and edit dashboards, manage users, or query the database through the data source. Change it unless the Web UI is reachable only by you.
+
+- **Before the first start**: set `GRAFANA_ADMIN_PASSWORD` in `.env`.
+- **After the first start**: changing `.env` has **no effect**. Grafana applies `GRAFANA_ADMIN_PASSWORD` only when its database (the `grafana_data` volume) is created for the first time. Reset it with the Grafana CLI instead:
+  ```bash
+  # The password is typed without echo and never appears in shell history
+  read -rsp 'New Grafana admin password: ' PW; echo
+  printf '%s\n' "$PW" | docker compose exec -T grafana grafana cli admin reset-admin-password --password-from-stdin
+  unset PW
+  ```
+  Or sign in as admin and use **Profile > Change password** in the Web UI.
+
+  The new password is stored (hashed) only in Grafana's database; `.env` is not updated, and keeping the old value there does no harm. If you remove the `grafana_data` volume (e.g. `docker compose down -v`), Grafana is re-initialized from `.env` again.
 
 #### Security Roadmap (Planned Future Hardening)
 - [ ] **Mandatory Authentication**: Option to disable anonymous viewer mode (`GRAFANA_ANONYMOUS_ENABLED=false`) with user password or Cloudflare Access SSO.
@@ -304,7 +319,7 @@ POSTGRES_DB=dmarc
 POSTGRES_USER=parsedmarc
 POSTGRES_PASSWORD=parsedmarc_password
 
-# Grafana 管理者情報
+# Grafana 管理者情報（反映されるのは初回起動時のみ。「Grafana 管理者パスワードの変更」を参照）
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
 
@@ -387,6 +402,21 @@ GRAFANA_BIND_IP=127.0.0.1
      - hostname: dmarc.example.com
        service: http://grafana:3000
    ```
+
+#### Grafana 管理者パスワードの変更
+匿名閲覧（`GRAFANA_ANONYMOUS_ENABLED=true`）にしていても、**管理者ログインは無効になりません**。初期値の `admin` / `admin` のままだと、Web 画面に届く人（オプション A なら LAN 内のどの端末からでも）が Grafana 管理者としてログインでき、ダッシュボードの編集・ユーザー管理・データソース経由でのデータベース参照ができてしまいます。Web 画面に自分しかアクセスできない環境でなければ変更してください。
+
+- **初回起動の前**: `.env` の `GRAFANA_ADMIN_PASSWORD` を設定します。
+- **初回起動の後**: `.env` を書き換えても**反映されません**。`GRAFANA_ADMIN_PASSWORD` が使われるのは、Grafana のデータベース（`grafana_data` ボリューム）が初めて作られるときだけです。Grafana CLI でリセットします：
+  ```bash
+  # 入力したパスワードは画面に表示されず、シェル履歴にも残りません
+  read -rsp 'New Grafana admin password: ' PW; echo
+  printf '%s\n' "$PW" | docker compose exec -T grafana grafana cli admin reset-admin-password --password-from-stdin
+  unset PW
+  ```
+  または、admin でログインして Web 画面の **Profile > Change password** から変更できます。
+
+  新しいパスワードは Grafana のデータベースにハッシュとして保存されるだけで、`.env` は更新されません（`.env` に古い値が残っていても問題ありません）。`docker compose down -v` などで `grafana_data` ボリュームを削除すると、`.env` の値で初期化し直されます。
 
 #### 今後のセキュリティ強化計画 (Roadmap)
 - [ ] **ログイン認証の必須化**: 匿名閲覧モードの無効化（`GRAFANA_ANONYMOUS_ENABLED=false`）と、パスワードまたは Cloudflare Access (SSO) 連携の容易化。
