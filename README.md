@@ -38,7 +38,7 @@ Below is an estimated real-world comparison of running `dmarc-visualizer-lite` r
 | **Database Engine** | **~1.5 GB – 2.5 GB+** | **~35 MB – 60 MB** | **~97% reduction** |
 | **Grafana (Web Dashboard)** | ~100 MB – 150 MB | ~75 MB – 90 MB | Legacy plugins removed |
 | **Total Resident Memory (RAM)** | **~1.6 GB – 2.7 GB+** | **~110 MB – 150 MB** | **~95% overall reduction** |
-| **Minimum Hardware Required** | 2 GB – 4 GB RAM VPS | **512 MB – 1 GB RAM VPS / Raspberry Pi** | Runs on cheapest instances |
+| **Minimum Hardware Required** | 2 GB – 4 GB RAM VPS | **512 MB – 1 GB RAM VPS** | Runs comfortably on smallest instances |
 
 #### Why is PostgreSQL so much lighter?
 1. **Zero Java/JVM Overhead:** Elasticsearch allocates a fixed Java Heap of at least 1 GB upon launch, plus operating system page caches. PostgreSQL (written in C) allocates memory dynamically as needed and starts at only ~25 MB.
@@ -245,7 +245,7 @@ The entrypoint script automatically detects legacy `[elasticsearch]` sections an
 ## 日本語
 
 PostgreSQL と Grafana を用いた、超軽量・省メモリなモダン DMARC 解析・可視化ツールです。  
-※ [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) の後継・軽量化プロジェクトです。Elasticsearch を PostgreSQL に置き換えることで RAM 使用量を 95% 以上削減（約100MBで動作）し、小規模VPSやラズパイでも軽快・安全に動くよう再設計されています。
+※ [DeDef/dmarc-visualizer](https://github.com/DeDef/dmarc-visualizer) の後継・軽量化プロジェクトです。Elasticsearch を PostgreSQL に置き換えることで RAM 使用量を 95% 以上削減（約100MBで動作）し、小規模なVPSや軽量サーバーでも軽快・安全に動くよう再設計されています。
 
 - **[parsedmarc](https://github.com/domainaware/parsedmarc)**: DMARC および SMTP-TLS レポートの解析エンジン
 - **[PostgreSQL](https://www.postgresql.org/)**: 軽量・永続ストレージ（Elasticsearch を廃止し、Java 依存を排除して省メモリ化）
@@ -273,7 +273,7 @@ PostgreSQL と Grafana を用いた、超軽量・省メモリなモダン DMARC
 | **データベース本体** | **約 1.5 GB 〜 2.5 GB+** | **約 35 MB 〜 60 MB** | **約 97% 削減** |
 | **Grafana (Web画面)** | 約 100 MB 〜 150 MB | 約 75 MB 〜 90 MB | プラグイン不要化で軽量化 |
 | **全体合計 (常駐RAM)** | **約 1.6 GB 〜 2.7 GB+** | **約 110 MB 〜 150 MB** | **約 95% 削減** |
-| **推奨ハードウェアスペック**| 最低 2 GB 〜 4 GB RAM の VPS | **512 MB 〜 1 GB RAM の格安VPS / ラズパイ** | 最安値サーバーで余裕で動作 |
+| **推奨ハードウェアスペック**| 最低 2 GB 〜 4 GB RAM の VPS | **512 MB 〜 1 GB RAM の格安VPS / 軽量サーバー** | 最安値インスタンスで余裕で動作 |
 
 #### なぜ PostgreSQL はこれほど軽いのか？
 1. **JVM (Java仮想マシン) のオーバーヘッドがゼロ:** Elasticsearch は起動するだけで最低 1 GB のヒープメモリを確保しますが、PostgreSQL (C言語製) は起動時わずか 25 MB 程度で、必要な分だけメモリを使います。
