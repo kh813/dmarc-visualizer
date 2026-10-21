@@ -20,7 +20,9 @@ services:
 
   parsedmarc:
     build: ./parsedmarc/
-    restart: on-failure
+    # IMAP watch mode: set PARSEDMARC_RESTART=unless-stopped in .env so it comes back after OS reboot.
+    # File-only mode: keep on-failure, otherwise it would re-parse ./files in an endless loop.
+    restart: ${PARSEDMARC_RESTART:-on-failure}
     depends_on:
       postgres:
         condition: service_healthy
