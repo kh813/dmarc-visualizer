@@ -2952,6 +2952,6 @@
   },
   "timezone": "utc",
   "title": "DMARC Reports",
-  "uid": "parsedmarc-pg",
+  "uid": "parsedmarc",
   "version": 1
 }
