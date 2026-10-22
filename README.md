@@ -66,6 +66,7 @@ Place your DMARC XML/zip/gz reports into the `files/` directory, then run:
 Access Grafana in your web browser at:
 👉 **http://localhost:3000** (or http://<LAN-IP>:3000)
 - Navigate to **Dashboards > DMARC Reports — PostgreSQL**
+- The dashboard shows times in **UTC** by default, and daily charts start each day at 00:00 UTC. To use your local time, open the time picker, click **Change time settings**, and set the time zone to **Browser Time** (or any other zone). Both the time axis and the start of each day follow that setting.
 
 ---
 
@@ -301,6 +302,7 @@ PostgreSQL（内部）と Grafana（標準ポート `3000`）が起動します�
 ブラウザで以下にアクセスします：
 👉 **http://localhost:3000** (または http://<LAN-IP>:3000)
 - **Dashboards > DMARC Reports — PostgreSQL** を開きます。
+- 初期設定では時刻を **UTC** で表示し、日別グラフも UTC の 0 時で日付を区切ります。ローカルタイム（日本なら日本時間）で見るには、時間範囲のピッカーを開いて **Change time settings** から、タイムゾーンを **Browser Time**（または任意のタイムゾーン）に切り替えてください。時間軸の表示と日付の区切りの両方がその設定に合わせて変わります。
 
 ---
 
