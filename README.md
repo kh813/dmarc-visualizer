@@ -109,6 +109,8 @@ save_aggregate = True
 # Save individual failure/forensic reports (ruf) for phishing & incident investigation
 # (Note: Malicious attachment payloads are automatically stripped for security)
 save_forensic = True
+# Save SMTP TLS reports (TLS-RPT). parsedmarc defaults to False, which leaves the SMTP TLS panels empty
+save_smtp_tls = True
 output = /output/
 
 # Optional: Fetch DMARC reports automatically from an IMAP mailbox
@@ -345,6 +347,8 @@ save_aggregate = True
 # 個別の認証失敗・なりすまし調査用レポート (ruf) をデータベースに保存
 # （危険な添付ファイルバイナリは自動的に無害化・除去されます）
 save_forensic = True
+# SMTP TLS レポート (TLS-RPT) をデータベースに保存（parsedmarc の初期値は False で、SMTP TLS のパネルが空のままになります）
+save_smtp_tls = True
 output = /output/
 
 # 任意: IMAP メールボックスからレポートを自動取得

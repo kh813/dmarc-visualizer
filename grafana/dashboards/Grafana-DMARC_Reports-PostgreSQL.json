@@ -2057,7 +2057,7 @@
       ]
     },
     {
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -2065,775 +2065,777 @@
         "y": 113
       },
       "id": 200,
-      "panels": [],
+      "panels": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": true,
+                "inspect": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Source IP"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 140
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Country"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 80
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Feedback Type"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Arrival Date"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 160
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Auth Failure"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 114
+          },
+          "id": 18,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Arrival Date"
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "title": "Failure Reports",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  f.arrival_date_utc AS \"Arrival Date\",\n  COALESCE(f.feedback_type, '') AS \"Feedback Type\",\n  COALESCE(f.reported_domain, '') AS \"Reported Domain\",\n  COALESCE(f.source_ip_address::TEXT, '') AS \"Source IP\",\n  COALESCE(f.source_reverse_dns, '') AS \"Reverse DNS\",\n  COALESCE(f.source_base_domain, '') AS \"Source Domain\",\n  COALESCE(f.source_country, '') AS \"Country\",\n  COALESCE(array_to_string(f.auth_failure, ', '), '') AS \"Auth Failure\",\n  COALESCE(f.authentication_results, '') AS \"Auth Results\",\n  COALESCE(f.delivery_result, '') AS \"Delivery Result\",\n  COALESCE(f.dkim_domain, '') AS \"DKIM Domain\",\n  COALESCE(\n    CASE WHEN COALESCE(f.sample_from->>'display_name', '') <> ''\n         THEN (f.sample_from->>'display_name') || ' <' || (f.sample_from->>'address') || '>'\n         ELSE f.sample_from->>'address'\n    END, '') AS \"From\",\n  COALESCE((\n    SELECT string_agg(\n             CASE WHEN COALESCE(a.display_name, '') <> ''\n                  THEN a.display_name || ' <' || a.address || '>'\n                  ELSE a.address END, ', ')\n    FROM dmarc_failure_sample_address a\n    WHERE a.report_id = f.id AND a.address_type = 'reply_to'\n  ), '') AS \"Reply To\",\n  COALESCE(f.sample_subject, '') AS \"Subject\",\n  COALESCE(f.original_mail_from, '') AS \"Mail From\",\n  COALESCE(f.original_rcpt_to, '') AS \"Rcpt To\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY f.id DESC",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": true,
+                "inspect": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Reports"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "transparent",
+                          "value": null
+                        },
+                        {
+                          "color": "dark-red",
+                          "value": 5
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": 128
+          },
+          "id": 19,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Reports"
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "title": "Failure Reports by Source Country",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  COALESCE(f.source_country, 'unknown') AS \"Country\",\n  COUNT(*) AS \"Reports\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY f.source_country\nORDER BY \"Reports\" DESC",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": true,
+                "inspect": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Reports"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 120
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "transparent",
+                          "value": null
+                        },
+                        {
+                          "color": "dark-red",
+                          "value": 5
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 12,
+            "y": 128
+          },
+          "id": 20,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Reports"
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "title": "Failure Reports by Source Domain",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  COALESCE(f.source_base_domain, 'unknown') AS \"Source Domain\",\n  COALESCE(f.source_country, '') AS \"Country\",\n  COALESCE(f.source_ip_address::TEXT, '') AS \"Source IP\",\n  COALESCE(f.source_reverse_dns, '') AS \"Reverse DNS\",\n  COUNT(*) AS \"Reports\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY f.source_base_domain, f.source_country, f.source_ip_address, f.source_reverse_dns\nORDER BY \"Reports\" DESC",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
       "title": "DMARC Failure",
       "type": "row"
     },
     {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "filterable": true,
-            "inspect": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Source IP"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 140
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Country"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 80
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Feedback Type"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 130
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Arrival Date"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 160
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Auth Failure"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 24,
-        "x": 0,
-        "y": 114
-      },
-      "id": 18,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Arrival Date"
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "title": "Failure Reports",
-      "type": "table",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  f.arrival_date_utc AS \"Arrival Date\",\n  COALESCE(f.feedback_type, '') AS \"Feedback Type\",\n  COALESCE(f.reported_domain, '') AS \"Reported Domain\",\n  COALESCE(f.source_ip_address::TEXT, '') AS \"Source IP\",\n  COALESCE(f.source_reverse_dns, '') AS \"Reverse DNS\",\n  COALESCE(f.source_base_domain, '') AS \"Source Domain\",\n  COALESCE(f.source_country, '') AS \"Country\",\n  COALESCE(array_to_string(f.auth_failure, ', '), '') AS \"Auth Failure\",\n  COALESCE(f.authentication_results, '') AS \"Auth Results\",\n  COALESCE(f.delivery_result, '') AS \"Delivery Result\",\n  COALESCE(f.dkim_domain, '') AS \"DKIM Domain\",\n  COALESCE(\n    CASE WHEN COALESCE(f.sample_from->>'display_name', '') <> ''\n         THEN (f.sample_from->>'display_name') || ' <' || (f.sample_from->>'address') || '>'\n         ELSE f.sample_from->>'address'\n    END, '') AS \"From\",\n  COALESCE((\n    SELECT string_agg(\n             CASE WHEN COALESCE(a.display_name, '') <> ''\n                  THEN a.display_name || ' <' || a.address || '>'\n                  ELSE a.address END, ', ')\n    FROM dmarc_failure_sample_address a\n    WHERE a.report_id = f.id AND a.address_type = 'reply_to'\n  ), '') AS \"Reply To\",\n  COALESCE(f.sample_subject, '') AS \"Subject\",\n  COALESCE(f.original_mail_from, '') AS \"Mail From\",\n  COALESCE(f.original_rcpt_to, '') AS \"Rcpt To\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nORDER BY f.id DESC",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "filterable": true,
-            "inspect": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Reports"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "transparent",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-red",
-                      "value": 5
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 0,
-        "y": 128
-      },
-      "id": 19,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Reports"
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "title": "Failure Reports by Source Country",
-      "type": "table",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  COALESCE(f.source_country, 'unknown') AS \"Country\",\n  COUNT(*) AS \"Reports\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY f.source_country\nORDER BY \"Reports\" DESC",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "filterable": true,
-            "inspect": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Reports"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 120
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "transparent",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-red",
-                      "value": 5
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 128
-      },
-      "id": 20,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Reports"
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "title": "Failure Reports by Source Domain",
-      "type": "table",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  COALESCE(f.source_base_domain, 'unknown') AS \"Source Domain\",\n  COALESCE(f.source_country, '') AS \"Country\",\n  COALESCE(f.source_ip_address::TEXT, '') AS \"Source IP\",\n  COALESCE(f.source_reverse_dns, '') AS \"Reverse DNS\",\n  COUNT(*) AS \"Reports\"\nFROM dmarc_failure_report f\nWHERE f.arrival_date_utc IS NOT NULL\n  AND f.arrival_date_utc::TIMESTAMPTZ BETWEEN $__timeFrom() AND $__timeTo()\nGROUP BY f.source_base_domain, f.source_country, f.source_ip_address, f.source_reverse_dns\nORDER BY \"Reports\" DESC",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "collapsed": false,
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 138
+        "y": 114
       },
       "id": 300,
-      "panels": [],
+      "panels": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisLabel": "Sessions",
+                "drawStyle": "bars",
+                "fillOpacity": 80,
+                "gradientMode": "scheme",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "showPoints": "never",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "normal"
+                }
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Successful"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failed"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 0,
+            "y": 139
+          },
+          "id": 21,
+          "options": {
+            "legend": {
+              "calcs": [
+                "sum"
+              ],
+              "displayMode": "list",
+              "placement": "right",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "title": "SMTP TLS Sessions Over Time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "time_series",
+              "rawSql": "SELECT\n  date_trunc('day', tr.begin_date, '${__timezone}') AS time,\n  'Successful' AS metric,\n  SUM(p.successful_session_count) AS value\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nGROUP BY time\nORDER BY time",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "time_series",
+              "rawSql": "SELECT\n  date_trunc('day', tr.begin_date, '${__timezone}') AS time,\n  'Failed' AS metric,\n  SUM(p.failed_session_count) AS value\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nGROUP BY time\nORDER BY time",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Successful"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failed"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "dark-red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 9,
+            "w": 12,
+            "x": 12,
+            "y": 139
+          },
+          "id": 22,
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "right",
+              "showLegend": true
+            },
+            "pieType": "donut",
+            "reduceOptions": {
+              "calcs": [
+                "sum"
+              ],
+              "fields": "",
+              "values": true
+            },
+            "tooltip": {
+              "mode": "single"
+            }
+          },
+          "title": "SMTP TLS Session Success/Failure",
+          "transparent": true,
+          "type": "piechart",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  'Successful' AS metric,\n  SUM(p.successful_session_count) AS \"Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nUNION ALL\nSELECT\n  'Failed' AS metric,\n  SUM(p.failed_session_count) AS \"Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": true,
+                "inspect": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Successful Sessions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 150
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "transparent",
+                          "value": null
+                        },
+                        {
+                          "color": "dark-green",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failed Sessions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "transparent",
+                          "value": null
+                        },
+                        {
+                          "color": "dark-red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 148
+          },
+          "id": 23,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Failed Sessions"
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "title": "SMTP TLS Policies",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  tr.organization_name AS \"Organization\",\n  tr.begin_date AS \"Begin\",\n  tr.end_date AS \"End\",\n  COALESCE(p.policy_domain, '') AS \"Policy Domain\",\n  COALESCE(p.policy_type, '') AS \"Policy Type\",\n  COALESCE(array_to_string(p.policy_strings, ', '), '') AS \"Policy Strings\",\n  COALESCE(p.successful_session_count, 0) AS \"Successful Sessions\",\n  COALESCE(p.failed_session_count, 0) AS \"Failed Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nORDER BY p.failed_session_count DESC NULLS LAST",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dmarc-postgresql"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "auto",
+                "filterable": true,
+                "inspect": true
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Failed Sessions"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 130
+                  },
+                  {
+                    "id": "thresholds",
+                    "value": {
+                      "mode": "absolute",
+                      "steps": [
+                        {
+                          "color": "transparent",
+                          "value": null
+                        },
+                        {
+                          "color": "dark-red",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 160
+          },
+          "id": 24,
+          "options": {
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Failed Sessions"
+              }
+            ],
+            "cellHeight": "sm",
+            "footer": {
+              "show": false
+            }
+          },
+          "title": "SMTP TLS Failure Details",
+          "type": "table",
+          "targets": [
+            {
+              "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "dmarc-postgresql"
+              },
+              "editorMode": "code",
+              "format": "table",
+              "rawSql": "SELECT\n  tr.organization_name AS \"Organization\",\n  COALESCE(p.policy_domain, '') AS \"Policy Domain\",\n  COALESCE(p.policy_type, '') AS \"Policy Type\",\n  COALESCE(fd.result_type, '') AS \"Result Type\",\n  COALESCE(fd.sending_mta_ip::TEXT, '') AS \"Sending MTA IP\",\n  COALESCE(fd.receiving_ip::TEXT, '') AS \"Receiving IP\",\n  COALESCE(fd.receiving_mx_hostname, '') AS \"Receiving MX\",\n  COALESCE(fd.failure_reason_code, '') AS \"Failure Reason\",\n  COALESCE(fd.additional_info_uri, '') AS \"Additional Info\",\n  COALESCE(fd.failed_session_count, 0) AS \"Failed Sessions\"\nFROM smtp_tls_failure_detail fd\nJOIN smtp_tls_policy p ON p.id = fd.policy_id\nJOIN smtp_tls_report tr ON tr.id = p.report_id\nWHERE $__timeFilter(tr.begin_date)\nORDER BY fd.failed_session_count DESC NULLS LAST",
+              "refId": "A"
+            }
+          ]
+        }
+      ],
       "title": "SMTP TLS",
       "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisLabel": "Sessions",
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "scheme",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Successful"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Failed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 139
-      },
-      "id": 21,
-      "options": {
-        "legend": {
-          "calcs": [
-            "sum"
-          ],
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "title": "SMTP TLS Sessions Over Time",
-      "type": "timeseries",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawSql": "SELECT\n  date_trunc('day', tr.begin_date, '${__timezone}') AS time,\n  'Successful' AS metric,\n  SUM(p.successful_session_count) AS value\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nGROUP BY time\nORDER BY time",
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "time_series",
-          "rawSql": "SELECT\n  date_trunc('day', tr.begin_date, '${__timezone}') AS time,\n  'Failed' AS metric,\n  SUM(p.failed_session_count) AS value\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nGROUP BY time\nORDER BY time",
-          "refId": "B"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Successful"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Failed"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 139
-      },
-      "id": 22,
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "right",
-          "showLegend": true
-        },
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
-          ],
-          "fields": "",
-          "values": true
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "title": "SMTP TLS Session Success/Failure",
-      "transparent": true,
-      "type": "piechart",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  'Successful' AS metric,\n  SUM(p.successful_session_count) AS \"Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nUNION ALL\nSELECT\n  'Failed' AS metric,\n  SUM(p.failed_session_count) AS \"Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "filterable": true,
-            "inspect": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Successful Sessions"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 150
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "transparent",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-green",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Failed Sessions"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 130
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "transparent",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-red",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 148
-      },
-      "id": 23,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Failed Sessions"
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "title": "SMTP TLS Policies",
-      "type": "table",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  tr.organization_name AS \"Organization\",\n  tr.begin_date AS \"Begin\",\n  tr.end_date AS \"End\",\n  COALESCE(p.policy_domain, '') AS \"Policy Domain\",\n  COALESCE(p.policy_type, '') AS \"Policy Type\",\n  COALESCE(array_to_string(p.policy_strings, ', '), '') AS \"Policy Strings\",\n  COALESCE(p.successful_session_count, 0) AS \"Successful Sessions\",\n  COALESCE(p.failed_session_count, 0) AS \"Failed Sessions\"\nFROM smtp_tls_report tr\nJOIN smtp_tls_policy p ON p.report_id = tr.id\nWHERE $__timeFilter(tr.begin_date)\nORDER BY p.failed_session_count DESC NULLS LAST",
-          "refId": "A"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "dmarc-postgresql"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "filterable": true,
-            "inspect": true
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Failed Sessions"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 130
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "transparent",
-                      "value": null
-                    },
-                    {
-                      "color": "dark-red",
-                      "value": 1
-                    }
-                  ]
-                }
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "color-background"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 160
-      },
-      "id": 24,
-      "options": {
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Failed Sessions"
-          }
-        ],
-        "cellHeight": "sm",
-        "footer": {
-          "show": false
-        }
-      },
-      "title": "SMTP TLS Failure Details",
-      "type": "table",
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "dmarc-postgresql"
-          },
-          "editorMode": "code",
-          "format": "table",
-          "rawSql": "SELECT\n  tr.organization_name AS \"Organization\",\n  COALESCE(p.policy_domain, '') AS \"Policy Domain\",\n  COALESCE(p.policy_type, '') AS \"Policy Type\",\n  COALESCE(fd.result_type, '') AS \"Result Type\",\n  COALESCE(fd.sending_mta_ip::TEXT, '') AS \"Sending MTA IP\",\n  COALESCE(fd.receiving_ip::TEXT, '') AS \"Receiving IP\",\n  COALESCE(fd.receiving_mx_hostname, '') AS \"Receiving MX\",\n  COALESCE(fd.failure_reason_code, '') AS \"Failure Reason\",\n  COALESCE(fd.additional_info_uri, '') AS \"Additional Info\",\n  COALESCE(fd.failed_session_count, 0) AS \"Failed Sessions\"\nFROM smtp_tls_failure_detail fd\nJOIN smtp_tls_policy p ON p.id = fd.policy_id\nJOIN smtp_tls_report tr ON tr.id = p.report_id\nWHERE $__timeFilter(tr.begin_date)\nORDER BY fd.failed_session_count DESC NULLS LAST",
-          "refId": "A"
-        }
-      ]
     }
   ],
   "refresh": "1m",

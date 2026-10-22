@@ -34,6 +34,7 @@ else
 [general]
 save_aggregate = True
 save_forensic = True
+save_smtp_tls = True
 output = /output/
 
 [postgresql]
